@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1410">
+<title>Bar 会計ノート</title>
+<style>
+  :root{
+    --bg:#1a1410; --card:#2a2018; --card2:#332619;
+    --accent:#e8a23d; --accent2:#c47f2a;
+    --text:#f5ede0; --muted:#a89683;
+    --line:#3d2f20; --good:#6fcf6f; --bad:#e86a5a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;
+    padding-bottom:calc(72px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    background:linear-gradient(180deg,#221a12,#1a1410);
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header h1{font-size:17px; margin:0; letter-spacing:.5px;}
+  header .date{font-size:13px; color:var(--muted);}
+  .wrap{padding:14px;}
+  section{display:none;}
+  section.active{display:block; animation:fade .2s;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px;}
+  .card h2{font-size:14px; margin:0 0 12px; color:var(--accent); letter-spacing:.5px; display:flex; align-items:center; gap:6px;}
+  .label{font-size:12px; color:var(--muted); margin-bottom:6px; display:block;}
+
+  input, button, select{font-family:inherit; font-size:16px;}
+  input[type=text], input[type=number]{
+    width:100%; background:var(--card2); border:1px solid var(--line); color:var(--text);
+    border-radius:10px; padding:11px 12px; outline:none;
+  }
+  input:focus{border-color:var(--accent);}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .chip{
+    background:var(--card2); border:1px solid var(--line); color:var(--text);
+    border-radius:20px; padding:8px 13px; font-size:14px;
+  }
+  .chip.on{background:var(--accent); color:#241a0e; border-color:var(--accent); font-weight:600;}
+
+  .stepper{display:flex; align-items:center; gap:0; background:var(--card2); border:1px solid var(--line); border-radius:10px; overflow:hidden; width:fit-content;}
+  .stepper button{width:46px; height:44px; background:none; border:none; color:var(--accent); font-size:22px; font-weight:700;}
+  .stepper .val{min-width:46px; text-align:center; font-size:18px; font-weight:700;}
+
+  .drink-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .drink-btn{
+    background:var(--card2); border:1px solid var(--line); color:var(--text);
+    border-radius:12px; padding:13px 10px; text-align:left;
+  }
+  .drink-btn .n{font-size:15px; font-weight:600;}
+  .drink-btn .p{font-size:12px; color:var(--muted); margin-top:3px;}
+  .drink-btn:active{border-color:var(--accent);}
+
+  .item-row{display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .item-row:last-child{border-bottom:none;}
+  .item-row .name{flex:1; font-size:15px;}
+  .item-row .sub{font-size:12px; color:var(--muted);}
+  .soda-btn{font-size:12px; padding:5px 9px; border-radius:14px; border:1px solid var(--line); background:var(--card2); color:var(--muted);}
+  .soda-btn.on{background:var(--accent); color:#241a0e; border-color:var(--accent); font-weight:600;}
+  .mini-step{display:flex; align-items:center; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .mini-step button{width:32px; height:32px; background:var(--card2); border:none; color:var(--accent); font-size:18px; font-weight:700;}
+  .mini-step .v{min-width:26px; text-align:center; font-size:14px;}
+
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:11px 13px;}
+  .switch{position:relative; width:50px; height:30px;}
+  .switch input{display:none;}
+  .switch span{position:absolute; inset:0; background:var(--line); border-radius:30px; transition:.2s;}
+  .switch span:before{content:""; position:absolute; width:24px; height:24px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s;}
+  .switch input:checked + span{background:var(--accent);}
+  .switch input:checked + span:before{transform:translateX(20px);}
+
+  .total-bar{display:flex; align-items:baseline; justify-content:space-between; margin-top:6px;}
+  .total-bar .t{font-size:13px; color:var(--muted);}
+  .total-bar .v{font-size:26px; font-weight:800; color:var(--accent);}
+
+  .btn{display:block; width:100%; border:none; border-radius:12px; padding:15px; font-size:16px; font-weight:700; margin-top:10px;}
+  .btn.primary{background:var(--accent); color:#241a0e;}
+  .btn.ghost{background:var(--card2); color:var(--text); border:1px solid var(--line);}
+  .btn.danger{background:transparent; color:var(--bad); border:1px solid var(--bad);}
+  .btn:active{opacity:.85;}
+
+  .cust{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:8px;}
+  .cust .top{display:flex; justify-content:space-between; align-items:center;}
+  .cust .seq{display:inline-block; background:var(--accent); color:#241a0e; font-weight:700; font-size:12px; border-radius:6px; padding:2px 7px; margin-right:8px;}
+  .cust .meta{font-size:14px;}
+  .cust .amt{font-size:17px; font-weight:700; color:var(--accent);}
+  .cust .drinks{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .cust .del{background:none; border:none; color:var(--bad); font-size:12px; margin-top:6px; padding:4px 0;}
+
+  .denom-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .denom-row:last-child{border-bottom:none;}
+  .denom-row .d{width:74px; font-size:15px; font-weight:600;}
+  .denom-row input{width:70px; text-align:center; padding:8px;}
+  .denom-row .x{color:var(--muted); font-size:14px;}
+  .denom-row .sub{flex:1; text-align:right; font-size:14px; color:var(--muted);}
+
+  .exp-row{display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .exp-row:last-child{border-bottom:none;}
+  .exp-row .l{flex:1;}
+  .exp-row .a{font-weight:600; color:var(--bad);}
+  .exp-row .del{background:none;border:none;color:var(--muted);font-size:18px;padding:0 4px;}
+
+  .master-row{display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line);}
+  .master-row:last-child{border-bottom:none;}
+  .master-row input.mn{flex:1;}
+  .master-row input.mp{width:92px; text-align:right;}
+  .master-row .del{background:none;border:none;color:var(--bad);font-size:20px;padding:0 4px;}
+
+  .sum-line{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:15px;}
+  .sum-line:last-child{border-bottom:none;}
+  .sum-line .v{font-weight:700;}
+  .sum-big{display:flex; justify-content:space-between; align-items:baseline; background:linear-gradient(135deg,#33260f,#2a2018); border:1px solid var(--accent2); border-radius:12px; padding:16px; margin:6px 0 4px;}
+  .sum-big .t{font-size:14px;}
+  .sum-big .v{font-size:30px; font-weight:800; color:var(--accent);}
+  .country-stat{display:flex; flex-wrap:wrap; gap:6px;}
+  .country-stat .cs{background:var(--card2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px;}
+  .country-stat .cs b{color:var(--accent);}
+  .pos{color:var(--good);} .neg{color:var(--bad);}
+  .hint{font-size:12px; color:var(--muted); line-height:1.6;}
+
+  nav{
+    position:fixed; bottom:0; left:0; right:0; z-index:20;
+    background:#221a12; border-top:1px solid var(--line);
+    display:flex; padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{flex:1; background:none; border:none; color:var(--muted); padding:9px 0 8px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:3px;}
+  nav button .ic{font-size:21px; line-height:1;}
+  nav button.active{color:var(--accent);}
+  .empty{text-align:center; color:var(--muted); font-size:14px; padding:18px 0;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍶 Bar 会計ノート</h1>
+  <div class="date" id="todayLabel"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== 会計 ===== -->
+  <section id="tab-kaikei" class="active">
+    <div class="card">
+      <h2>新規会計 <span id="seqBadge" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
+
+      <span class="label">国名</span>
+      <div class="chips" id="countryChips"></div>
+      <input type="text" id="countryInput" placeholder="その他の国を入力" autocomplete="off">
+
+      <div style="display:flex; gap:14px; margin-top:14px; align-items:flex-end;">
+        <div>
+          <span class="label">人数</span>
+          <div class="stepper">
+            <button onclick="changePeople(-1)">−</button>
+            <span class="val" id="peopleVal">1</span>
+            <button onclick="changePeople(1)">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-row" style="margin-top:14px;">
+        <div>
+          <div style="font-size:15px;">チャージ</div>
+          <div class="sub" id="chargeSub" style="font-size:12px;color:var(--muted);"></div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="chargeToggle" checked onchange="renderOrder()">
+          <span></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>ドリンク</h2>
+      <div class="drink-grid" id="drinkButtons"></div>
+      <div id="orderItems" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="total-bar">
+        <span class="t">この会計の合計</span>
+        <span class="v" id="orderTotal">¥0</span>
+      </div>
+      <button class="btn primary" onclick="confirmOrder()">会計を確定する</button>
+      <button class="btn ghost" onclick="clearOrder()">入力をクリア</button>
+    </div>
+
+    <div class="card">
+      <h2>本日の会計一覧 <span id="custCount" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
+      <div id="customerList"></div>
+    </div>
+  </section>
+
+  <!-- ===== ドリンク管理 ===== -->
+  <section id="tab-drinks">
+    <div class="card">
+      <h2>料金設定</h2>
+      <span class="label">チャージ料金（1人あたり）</span>
+      <input type="number" id="chargeAmtInput" inputmode="numeric" onchange="setChargeAmt(this.value)">
+      <span class="label" style="margin-top:12px;">ソーダ等の追加料金（1杯あたり）</span>
+      <input type="number" id="sodaAmtInput" inputmode="numeric" onchange="setSodaAmt(this.value)">
+    </div>
+
+    <div class="card">
+      <h2>ドリンク登録</h2>
+      <div id="drinkMaster"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <input type="text" id="newDrinkName" placeholder="お酒の名前" style="flex:1;">
+        <input type="number" id="newDrinkPrice" placeholder="値段" inputmode="numeric" style="width:92px;">
+      </div>
+      <button class="btn primary" onclick="addDrink()">＋ 追加する</button>
+      <p class="hint">値段や名前は欄を直接編集するとすぐ保存されます。</p>
+    </div>
+  </section>
+
+  <!-- ===== 現金集計 ===== -->
+  <section id="tab-cash">
+    <div class="card">
+      <h2>現金の枚数を数える</h2>
+      <div id="cashList"></div>
+      <div class="total-bar" style="margin-top:12px;">
+        <span class="t">現金合計（実際にある金額）</span>
+        <span class="v" id="cashTotal">¥0</span>
+      </div>
+      <button class="btn ghost" onclick="resetCash()">枚数をすべて0に戻す</button>
+    </div>
+  </section>
+
+  <!-- ===== 経費 ===== -->
+  <section id="tab-expense">
+    <div class="card">
+      <h2>経費の記録</h2>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="expLabel" placeholder="内容（例：氷、おつまみ）" style="flex:1;">
+        <input type="number" id="expAmount" placeholder="金額" inputmode="numeric" style="width:92px;">
+      </div>
+      <button class="btn primary" onclick="addExpense()">＋ 経費を追加</button>
+      <div id="expenseList" style="margin-top:12px;"></div>
+      <div class="total-bar" style="margin-top:8px;">
+        <span class="t">経費合計</span>
+        <span class="v" id="expenseTotal" style="color:var(--bad);">¥0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 集計 ===== -->
+  <section id="tab-summary">
+    <div class="card">
+      <h2>本日の集計</h2>
+      <div id="summary"></div>
+    </div>
+    <div class="card">
+      <h2>1日の締め</h2>
+      <button class="btn ghost" onclick="copySummary()">📋 集計をコピー</button>
+      <button class="btn danger" onclick="closeDay()">営業終了・データをリセット</button>
+      <p class="hint">「営業終了」を押すと本日の会計・経費・現金がリセットされます（ドリンク登録と料金設定は残ります）。リセット前に集計のコピーをおすすめします。</p>
+    </div>
+  </section>
+
+</div>
+
+<nav>
+  <button class="active" data-tab="kaikei" onclick="switchTab('kaikei',this)"><span class="ic">🧾</span>会計</button>
+  <button data-tab="drinks" onclick="switchTab('drinks',this)"><span class="ic">🍶</span>ドリンク</button>
+  <button data-tab="cash" onclick="switchTab('cash',this)"><span class="ic">💴</span>現金</button>
+  <button data-tab="expense" onclick="switchTab('expense',this)"><span class="ic">📤</span>経費</button>
+  <button data-tab="summary" onclick="switchTab('summary',this)"><span class="ic">📊</span>集計</button>
+</nav>
+
+<script>
+const STORE_KEY = 'bar_kaikei_v1';
+const DEFAULT_DRINKS = [
+  {id:'d1', name:'ビール', price:800},
+  {id:'d2', name:'梅酒',   price:800},
+  {id:'d3', name:'ハブ酒', price:1500},
+];
+const COUNTRIES = ['日本','アメリカ','中国','台湾','韓国','香港','タイ','フィリピン','イギリス','フランス','ドイツ','イタリア','スペイン','オーストラリア','カナダ'];
+const DENOMS = [10000,5000,1000,500,100,50,10,5,1];
+
+function today(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function jpDate(){
+  const d = new Date();
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}月${d.getDate()}日(${w})`;
+}
+function yen(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
+
+function defaultState(){
+  const cash={}; DENOMS.forEach(d=>cash[d]=0);
+  return {
+    date: today(),
+    drinks: DEFAULT_DRINKS.map(d=>({...d})),
+    chargeAmount: 1000,
+    sodaAmount: 100,
+    customers: [],
+    expenses: [],
+    cash,
+  };
+}
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(!s) return defaultState();
+    // 後方互換: 欠けたキーを補完
+    const def = defaultState();
+    return Object.assign(def, s, {cash: Object.assign(def.cash, s.cash||{})});
+  }catch(e){ return defaultState(); }
+}
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+let state = load();
+// 進行中の会計（保存しない）
+let order = { country:'', people:1, charge:true, items:[] };
+
+/* ---------- タブ ---------- */
+function switchTab(name, btn){
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(name==='summary') renderSummary();
+  if(name==='cash') renderCash();
+  if(name==='expense') renderExpenses();
+  if(name==='drinks') renderDrinkMaster();
+  window.scrollTo(0,0);
+}
+
+/* ---------- 会計：国・人数 ---------- */
+function renderCountryChips(){
+  const wrap = document.getElementById('countryChips');
+  wrap.innerHTML = '';
+  COUNTRIES.forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (order.country===c ? ' on':'');
+    b.textContent = c;
+    b.onclick = ()=>{ order.country=c; document.getElementById('countryInput').value=''; renderCountryChips(); };
+    wrap.appendChild(b);
+  });
+}
+document.getElementById('countryInput').addEventListener('input', e=>{
+  order.country = e.target.value.trim();
+  document.querySelectorAll('#countryChips .chip').forEach(c=>c.classList.remove('on'));
+});
+function changePeople(d){
+  order.people = Math.max(1, order.people + d);
+  document.getElementById('peopleVal').textContent = order.people;
+  renderOrder();
+}
+
+/* ---------- 会計：ドリンク ---------- */
+function renderDrinkButtons(){
+  const wrap = document.getElementById('drinkButtons');
+  wrap.innerHTML = '';
+  if(state.drinks.length===0){ wrap.innerHTML='<p class="hint">ドリンクが未登録です。「ドリンク」タブで登録してください。</p>'; return; }
+  state.drinks.forEach(d=>{
+    const b = document.createElement('button');
+    b.className = 'drink-btn';
+    b.innerHTML = `<div class="n">${escapeHtml(d.name)}</div><div class="p">${yen(d.price)}</div>`;
+    b.onclick = ()=>addItem(d);
+    wrap.appendChild(b);
+  });
+}
+function addItem(d){
+  const ex = order.items.find(i=>i.drinkId===d.id && !i.soda);
+  if(ex){ ex.qty++; }
+  else order.items.push({drinkId:d.id, name:d.name, price:d.price, qty:1, soda:false});
+  renderOrder();
+}
+function itemTotal(i){ return (i.price + (i.soda?state.sodaAmount:0)) * i.qty; }
+function changeQty(idx, d){
+  order.items[idx].qty += d;
+  if(order.items[idx].qty<=0) order.items.splice(idx,1);
+  renderOrder();
+}
+function toggleSoda(idx){ order.items[idx].soda = !order.items[idx].soda; renderOrder(); }
+
+function orderTotal(){
+  let t = order.charge ? state.chargeAmount * order.people : 0;
+  order.items.forEach(i=>t+=itemTotal(i));
+  return t;
+}
+function renderOrder(){
+  order.charge = document.getElementById('chargeToggle').checked;
+  document.getElementById('chargeSub').textContent =
+    `${yen(state.chargeAmount)} × ${order.people}名 = ${yen(state.chargeAmount*order.people)}`;
+  const wrap = document.getElementById('orderItems');
+  wrap.innerHTML = '';
+  order.items.forEach((i,idx)=>{
+    const row = document.createElement('div');
+    row.className='item-row';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <div class="name">${escapeHtml(i.name)}</div>
+        <div class="sub">${yen(i.price)}${i.soda?` + ソーダ${yen(state.sodaAmount)}`:''} ＝ ${yen(itemTotal(i))}</div>
+      </div>
+      <button class="soda-btn ${i.soda?'on':''}" onclick="toggleSoda(${idx})">ソーダ</button>
+      <div class="mini-step">
+        <button onclick="changeQty(${idx},-1)">−</button>
+        <span class="v">${i.qty}</span>
+        <button onclick="changeQty(${idx},1)">＋</button>
+      </div>`;
+    wrap.appendChild(row);
+  });
+  document.getElementById('orderTotal').textContent = yen(orderTotal());
+  document.getElementById('seqBadge').textContent = `${state.customers.length+1}組目`;
+}
+function clearOrder(){
+  order = { country:'', people:1, charge:true, items:[] };
+  document.getElementById('countryInput').value='';
+  document.getElementById('peopleVal').textContent='1';
+  document.getElementById('chargeToggle').checked=true;
+  renderCountryChips(); renderOrder();
+}
+function confirmOrder(){
+  if(order.items.length===0 && !order.charge){
+    alert('チャージかドリンクを入力してください'); return;
+  }
+  state.customers.push({
+    id: Date.now(),
+    seq: state.customers.length+1,
+    country: order.country || '不明',
+    people: order.people,
+    charge: order.charge ? state.chargeAmount*order.people : 0,
+    items: order.items.map(i=>({...i, total:itemTotal(i)})),
+    total: orderTotal(),
+  });
+  save();
+  clearOrder();
+  renderCustomers();
+}
+
+/* ---------- 会計一覧 ---------- */
+function renderCustomers(){
+  const wrap = document.getElementById('customerList');
+  wrap.innerHTML='';
+  if(state.customers.length===0){ wrap.innerHTML='<div class="empty">まだ会計がありません</div>'; }
+  // 新しい順
+  [...state.customers].reverse().forEach(c=>{
+    const drinks = c.items.map(i=>`${i.name}${i.soda?'(ソーダ)':''}×${i.qty}`).join('、') || '—';
+    const div = document.createElement('div');
+    div.className='cust';
+    div.innerHTML = `
+      <div class="top">
+        <div class="meta"><span class="seq">${c.seq}組目</span>${escapeHtml(c.country)} ／ ${c.people}名</div>
+        <div class="amt">${yen(c.total)}</div>
+      </div>
+      <div class="drinks">${c.charge?`チャージ ${yen(c.charge)}　`:''}${escapeHtml(drinks)}</div>
+      <button class="del" onclick="deleteCustomer(${c.id})">この会計を削除</button>`;
+    wrap.appendChild(div);
+  });
+  const people = state.customers.reduce((s,c)=>s+c.people,0);
+  document.getElementById('custCount').textContent = `${state.customers.length}組 / ${people}名`;
+  document.getElementById('seqBadge').textContent = `${state.customers.length+1}組目`;
+}
+function deleteCustomer(id){
+  if(!confirm('この会計を削除しますか？')) return;
+  state.customers = state.customers.filter(c=>c.id!==id);
+  // 組番号を振り直し
+  state.customers.forEach((c,idx)=>c.seq=idx+1);
+  save(); renderCustomers();
+}
+
+/* ---------- ドリンク管理 ---------- */
+function renderDrinkMaster(){
+  document.getElementById('chargeAmtInput').value = state.chargeAmount;
+  document.getElementById('sodaAmtInput').value = state.sodaAmount;
+  const wrap = document.getElementById('drinkMaster');
+  wrap.innerHTML='';
+  state.drinks.forEach(d=>{
+    const row = document.createElement('div');
+    row.className='master-row';
+    row.innerHTML = `
+      <input class="mn" type="text" value="${escapeAttr(d.name)}" onchange="editDrink('${d.id}','name',this.value)">
+      <input class="mp" type="number" inputmode="numeric" value="${d.price}" onchange="editDrink('${d.id}','price',this.value)">
+      <button class="del" onclick="deleteDrink('${d.id}')">×</button>`;
+    wrap.appendChild(row);
+  });
+  if(state.drinks.length===0) wrap.innerHTML='<div class="empty">ドリンク未登録</div>';
+}
+function editDrink(id, field, val){
+  const d = state.drinks.find(x=>x.id===id); if(!d) return;
+  if(field==='price') d.price = Math.max(0, parseInt(val)||0);
+  else d.name = val.trim() || d.name;
+  save(); renderDrinkButtons();
+}
+function deleteDrink(id){
+  if(!confirm('このドリンクを削除しますか？')) return;
+  state.drinks = state.drinks.filter(d=>d.id!==id);
+  save(); renderDrinkMaster(); renderDrinkButtons();
+}
+function addDrink(){
+  const name = document.getElementById('newDrinkName').value.trim();
+  const price = parseInt(document.getElementById('newDrinkPrice').value)||0;
+  if(!name){ alert('お酒の名前を入力してください'); return; }
+  state.drinks.push({id:'d'+Date.now(), name, price});
+  document.getElementById('newDrinkName').value='';
+  document.getElementById('newDrinkPrice').value='';
+  save(); renderDrinkMaster(); renderDrinkButtons();
+}
+function setChargeAmt(v){ state.chargeAmount=Math.max(0,parseInt(v)||0); save(); renderOrder(); }
+function setSodaAmt(v){ state.sodaAmount=Math.max(0,parseInt(v)||0); save(); renderOrder(); }
+
+/* ---------- 現金集計 ---------- */
+function renderCash(){
+  const wrap = document.getElementById('cashList');
+  wrap.innerHTML='';
+  DENOMS.forEach(d=>{
+    const cnt = state.cash[d]||0;
+    const row = document.createElement('div');
+    row.className='denom-row';
+    row.innerHTML = `
+      <span class="d">${yen(d)}</span>
+      <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCash(${d},this.value)">
+      <span class="x">枚</span>
+      <span class="sub">${yen(d*cnt)}</span>`;
+    wrap.appendChild(row);
+  });
+  document.getElementById('cashTotal').textContent = yen(cashTotal());
+}
+function cashTotal(){ return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0); }
+function setCash(d,v){ state.cash[d]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
+function resetCash(){
+  if(!confirm('枚数をすべて0に戻しますか？')) return;
+  DENOMS.forEach(d=>state.cash[d]=0); save(); renderCash();
+}
+
+/* ---------- 経費 ---------- */
+function renderExpenses(){
+  const wrap = document.getElementById('expenseList');
+  wrap.innerHTML='';
+  if(state.expenses.length===0) wrap.innerHTML='<div class="empty">経費なし</div>';
+  state.expenses.forEach(e=>{
+    const row=document.createElement('div');
+    row.className='exp-row';
+    row.innerHTML=`<span class="l">${escapeHtml(e.label)}</span><span class="a">${yen(e.amount)}</span><button class="del" onclick="deleteExpense(${e.id})">×</button>`;
+    wrap.appendChild(row);
+  });
+  document.getElementById('expenseTotal').textContent = yen(expenseTotal());
+}
+function expenseTotal(){ return state.expenses.reduce((s,e)=>s+e.amount,0); }
+function addExpense(){
+  const label = document.getElementById('expLabel').value.trim() || '経費';
+  const amount = parseInt(document.getElementById('expAmount').value)||0;
+  if(amount<=0){ alert('金額を入力してください'); return; }
+  state.expenses.push({id:Date.now(), label, amount});
+  document.getElementById('expLabel').value='';
+  document.getElementById('expAmount').value='';
+  save(); renderExpenses();
+}
+function deleteExpense(id){
+  state.expenses=state.expenses.filter(e=>e.id!==id); save(); renderExpenses();
+}
+
+/* ---------- 集計 ---------- */
+function salesTotal(){ return state.customers.reduce((s,c)=>s+c.total,0); }
+function chargeTotal(){ return state.customers.reduce((s,c)=>s+c.charge,0); }
+function drinkSales(){ return salesTotal()-chargeTotal(); }
+function countryBreakdown(){
+  const m={};
+  state.customers.forEach(c=>{ m[c.country]=(m[c.country]||0)+c.people; });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function renderSummary(){
+  const sales=salesTotal(), exp=expenseTotal(), cash=cashTotal();
+  const groups=state.customers.length;
+  const people=state.customers.reduce((s,c)=>s+c.people,0);
+  const net=sales-exp;
+  const cb=countryBreakdown();
+  const csHtml = cb.length? cb.map(([k,v])=>`<span class="cs">${escapeHtml(k)} <b>${v}名</b></span>`).join('') : '<span class="hint">データなし</span>';
+
+  document.getElementById('summary').innerHTML = `
+    <div class="sum-big">
+      <span class="t">本日の売上</span>
+      <span class="v">${yen(sales)}</span>
+    </div>
+    <div class="sum-line"><span>来客数</span><span class="v">${groups}組 / ${people}名</span></div>
+    <div class="sum-line"><span>チャージ合計</span><span class="v">${yen(chargeTotal())}</span></div>
+    <div class="sum-line"><span>ドリンク売上</span><span class="v">${yen(drinkSales())}</span></div>
+    <div class="sum-line"><span>経費合計</span><span class="v neg">−${yen(exp)}</span></div>
+    <div class="sum-line"><span>売上 − 経費</span><span class="v ${net>=0?'pos':'neg'}">${yen(net)}</span></div>
+    <div class="sum-line"><span>現金実数（数えた金額）</span><span class="v">${yen(cash)}</span></div>
+    <div style="margin-top:14px;"><span class="label">国別の人数</span><div class="country-stat">${csHtml}</div></div>
+  `;
+}
+function summaryText(){
+  const cb=countryBreakdown().map(([k,v])=>`  ${k}: ${v}名`).join('\n');
+  return [
+    `【${jpDate()} 営業集計】`,
+    `本日の売上: ${yen(salesTotal())}`,
+    `来客: ${state.customers.length}組 / ${state.customers.reduce((s,c)=>s+c.people,0)}名`,
+    `チャージ合計: ${yen(chargeTotal())}`,
+    `ドリンク売上: ${yen(drinkSales())}`,
+    `経費合計: ${yen(expenseTotal())}`,
+    `売上−経費: ${yen(salesTotal()-expenseTotal())}`,
+    `現金実数: ${yen(cashTotal())}`,
+    `国別:\n${cb||'  —'}`,
+  ].join('\n');
+}
+function copySummary(){
+  const t=summaryText();
+  if(navigator.clipboard){ navigator.clipboard.writeText(t).then(()=>alert('集計をコピーしました')).catch(()=>prompt('コピーしてください',t)); }
+  else prompt('コピーしてください',t);
+}
+function closeDay(){
+  if(!confirm('営業を終了して本日のデータをリセットしますか？\n（ドリンク登録と料金設定は残ります）')) return;
+  state.customers=[]; state.expenses=[];
+  DENOMS.forEach(d=>state.cash[d]=0);
+  state.date=today();
+  save();
+  document.getElementById('todayLabel').textContent=jpDate();
+  clearOrder(); renderCustomers(); renderSummary(); renderCash(); renderExpenses();
+  alert('リセットしました。今日もがんばってください！');
+}
+
+/* ---------- utils ---------- */
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/'/g,'&#39;'); }
+
+/* ---------- 初期化 ---------- */
+function init(){
+  // 日付が変わっていたら確認
+  document.getElementById('todayLabel').textContent = jpDate();
+  renderCountryChips();
+  renderDrinkButtons();
+  renderOrder();
+  renderCustomers();
+}
+init();
+</script>
+</body>
+</html>
