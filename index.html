@@ -49,12 +49,12 @@
     border-radius:10px; padding:11px 12px; outline:none;
   }
   input:focus{border-color:var(--accent);}
+  .field-row{display:flex; gap:8px; align-items:flex-end;}
 
-  /* 国の大ボタン */
   .country-big{display:flex; flex-direction:column; gap:9px; margin-bottom:12px;}
-  .cbtn{display:flex; align-items:center; gap:12px; padding:16px 16px; font-size:18px; font-weight:700;
+  .cbtn{display:flex; align-items:center; gap:12px; padding:15px 16px; font-size:17px; font-weight:700;
     background:var(--card2); border:1px solid var(--line); border-radius:13px; color:var(--text);}
-  .cbtn .flag{font-size:26px; line-height:1;}
+  .cbtn .flag{font-size:24px; line-height:1;}
   .cbtn.on{background:var(--accent); color:#241a0e; border-color:var(--accent);}
 
   .stepper{display:flex; align-items:center; gap:0; background:var(--card2); border:1px solid var(--line); border-radius:10px; overflow:hidden; width:fit-content;}
@@ -62,25 +62,15 @@
   .stepper .val{min-width:46px; text-align:center; font-size:18px; font-weight:700;}
 
   .drink-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
-  .drink-btn{
-    background:var(--card2); border:1px solid var(--line); color:var(--text);
-    border-radius:12px; padding:13px 10px; text-align:left;
-  }
+  .drink-btn{background:var(--card2); border:1px solid var(--line); color:var(--text); border-radius:12px; padding:12px 10px; text-align:left;}
   .drink-btn .n{font-size:15px; font-weight:600;}
   .drink-btn .p{font-size:12px; color:var(--muted); margin-top:3px;}
   .drink-btn:active{border-color:var(--accent);}
-  .add-btn{background:var(--card2); border:1px dashed var(--accent2); color:var(--accent); border-radius:12px; padding:13px 10px; font-weight:600;}
 
-  /* 割りもの */
   .mix-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
-  .mix-btn{background:#23323d; border:1px solid #2f4654; color:#cfe6f5; border-radius:12px; padding:13px 6px; font-weight:600; font-size:14px;}
+  .mix-btn{background:#23323d; border:1px solid #2f4654; color:#cfe6f5; border-radius:12px; padding:12px 6px; font-weight:600; font-size:14px;}
   .mix-btn .p{display:block; font-size:11px; color:#8fb6cf; margin-top:3px;}
   .mix-btn:active{border-color:var(--blue);}
-  .mix-add{border:1px dashed var(--blue); color:var(--blue); background:#23323d;}
-
-  .inline-form{display:none; margin-top:10px; padding:12px; background:var(--card2); border:1px solid var(--line); border-radius:12px;}
-  .inline-form.show{display:block;}
-  .inline-form .row{display:flex; gap:8px;}
 
   .item-row{display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line);}
   .item-row:last-child{border-bottom:none;}
@@ -107,16 +97,18 @@
   .btn.primary{background:var(--accent); color:#241a0e;}
   .btn.ghost{background:var(--card2); color:var(--text); border:1px solid var(--line);}
   .btn.danger{background:transparent; color:var(--bad); border:1px solid var(--bad);}
-  .btn.sm{padding:11px; font-size:14px;}
+  .btn.sm{padding:11px; font-size:14px; margin-top:0;}
   .btn:active{opacity:.85;}
 
-  .cust{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:8px;}
-  .cust .top{display:flex; justify-content:space-between; align-items:center;}
-  .cust .seq{display:inline-block; background:var(--accent); color:#241a0e; font-weight:700; font-size:12px; border-radius:6px; padding:2px 7px; margin-right:8px;}
-  .cust .meta{font-size:14px;}
-  .cust .amt{font-size:17px; font-weight:700; color:var(--accent);}
-  .cust .drinks{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
-  .cust .del{background:none; border:none; color:var(--bad); font-size:12px; margin-top:6px; padding:4px 0;}
+  .tab{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
+  .tab.editing{border-color:var(--accent);}
+  .tab .top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .tab .seq{display:inline-block; background:var(--accent); color:#241a0e; font-weight:700; font-size:12px; border-radius:6px; padding:2px 7px; margin-right:8px;}
+  .tab .who{font-size:15px; font-weight:600;}
+  .tab .meta{font-size:12px; color:var(--muted); margin-top:2px;}
+  .tab .amt{font-size:19px; font-weight:800; color:var(--accent); white-space:nowrap;}
+  .tab .drinks{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .row-btns{display:flex; gap:8px; margin-top:10px;}
 
   .denom-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
   .denom-row:last-child{border-bottom:none;}
@@ -149,11 +141,7 @@
   .pos{color:var(--good);} .neg{color:var(--bad);}
   .hint{font-size:12px; color:var(--muted); line-height:1.6;}
 
-  nav{
-    position:fixed; bottom:0; left:0; right:0; z-index:20;
-    background:#221a12; border-top:1px solid var(--line);
-    display:flex; padding-bottom:env(safe-area-inset-bottom);
-  }
+  nav{position:fixed; bottom:0; left:0; right:0; z-index:20; background:#221a12; border-top:1px solid var(--line); display:flex; padding-bottom:env(safe-area-inset-bottom);}
   nav button{flex:1; background:none; border:none; color:var(--muted); padding:9px 0 8px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:3px;}
   nav button .ic{font-size:21px; line-height:1;}
   nav button.active{color:var(--accent);}
@@ -168,85 +156,58 @@
 
 <div class="wrap">
 
-  <!-- ===== 会計 ===== -->
+  <!-- ===== 会計（席） ===== -->
   <section id="tab-kaikei" class="active">
     <div class="card">
-      <h2>新規会計 <span id="seqBadge" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
+      <h2>お客様の登録</h2>
 
-      <span class="label">国名</span>
-      <div class="country-big" id="countryButtons"></div>
-
-      <div id="nameField" style="display:none; margin-bottom:12px;">
-        <span class="label">お名前</span>
-        <input type="text" id="guestName" placeholder="例：田中さん" autocomplete="off">
+      <div class="field-row">
+        <div style="flex:1;">
+          <span class="label">名前</span>
+          <input type="text" id="regName" placeholder="お客様" autocomplete="off">
+        </div>
+        <div style="width:118px;">
+          <span class="label">チップ</span>
+          <input type="number" id="regTip" placeholder="0" inputmode="numeric">
+        </div>
       </div>
 
-      <span class="label">その他の国</span>
-      <input type="text" id="otherCountry" placeholder="国名を入力（例：タイ）" autocomplete="off">
+      <span class="label" style="margin-top:14px;">国名</span>
+      <div class="country-big" id="countryButtons"></div>
+      <input type="text" id="otherCountry" placeholder="その他の国を入力（例：タイ）" autocomplete="off">
 
       <div style="margin-top:14px;">
         <span class="label">人数</span>
         <div class="stepper">
-          <button onclick="changePeople(-1)">−</button>
-          <span class="val" id="peopleVal">1</span>
-          <button onclick="changePeople(1)">＋</button>
+          <button onclick="changeRegPeople(-1)">−</button>
+          <span class="val" id="regPeopleVal">1</span>
+          <button onclick="changeRegPeople(1)">＋</button>
         </div>
       </div>
 
       <div class="toggle-row" style="margin-top:14px;">
         <div>
           <div style="font-size:15px;">チャージ</div>
-          <div id="chargeSub" style="font-size:12px;color:var(--muted);"></div>
+          <div id="regChargeSub" style="font-size:12px;color:var(--muted);"></div>
         </div>
         <label class="switch">
-          <input type="checkbox" id="chargeToggle" checked onchange="renderOrder()">
+          <input type="checkbox" id="regCharge" checked onchange="renderRegCharge()">
           <span></span>
         </label>
       </div>
+
+      <button class="btn primary" onclick="registerTab()">＋ 登録する（席を開く）</button>
+      <p class="hint">登録すると下の「今飲んでいる人たち」に追加され、そのまま編集が開きます。飲み物はそこで追加します。</p>
     </div>
 
     <div class="card">
-      <h2>ドリンク</h2>
-      <div class="drink-grid" id="drinkButtons"></div>
-      <button class="add-btn" style="width:100%; margin-top:8px;" onclick="toggleForm('drinkForm')">＋ 飲み物を追加</button>
-      <div class="inline-form" id="drinkForm">
-        <span class="label">新しい飲み物</span>
-        <div class="row">
-          <input type="text" id="ckDrinkName" placeholder="名前（例：ウイスキー）" style="flex:1;">
-          <input type="number" id="ckDrinkPrice" placeholder="値段" inputmode="numeric" style="width:90px;">
-        </div>
-        <button class="btn primary sm" onclick="addDrinkInline()">登録する</button>
-      </div>
+      <h2>今飲んでいる人たち <span id="openCount" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
+      <div id="openList"></div>
     </div>
 
     <div class="card">
-      <h2>割りもの（ソーダ・コーラ等）</h2>
-      <div class="mix-grid" id="mixerButtons"></div>
-      <button class="add-btn mix-add" style="width:100%; margin-top:8px;" onclick="toggleForm('mixerForm')">＋ 割りものを追加</button>
-      <div class="inline-form" id="mixerForm">
-        <span class="label">新しい割りもの</span>
-        <div class="row">
-          <input type="text" id="ckMixName" placeholder="名前（例：ジンジャー）" style="flex:1;">
-          <input type="number" id="ckMixPrice" placeholder="値段" inputmode="numeric" value="100" style="width:90px;">
-        </div>
-        <button class="btn primary sm" onclick="addMixerInline()">登録する</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>注文内容</h2>
-      <div id="orderItems"></div>
-      <div class="total-bar" style="margin-top:8px;">
-        <span class="t">この会計の合計</span>
-        <span class="v" id="orderTotal">¥0</span>
-      </div>
-      <button class="btn primary" onclick="confirmOrder()">会計を確定する</button>
-      <button class="btn ghost" onclick="clearOrder()">入力をクリア</button>
-    </div>
-
-    <div class="card">
-      <h2>本日の会計一覧 <span id="custCount" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
-      <div id="customerList"></div>
+      <h2>本日 会計済み <span id="closedCount" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
+      <div id="closedList"></div>
     </div>
   </section>
 
@@ -257,7 +218,6 @@
       <span class="label">チャージ料金（1人あたり）</span>
       <input type="number" id="chargeAmtInput" inputmode="numeric" onchange="setChargeAmt(this.value)">
     </div>
-
     <div class="card">
       <h2>ドリンク登録</h2>
       <div id="drinkMaster"></div>
@@ -267,7 +227,6 @@
       </div>
       <button class="btn primary" onclick="addDrink()">＋ ドリンクを追加</button>
     </div>
-
     <div class="card">
       <h2>割りもの登録</h2>
       <div id="mixerMaster"></div>
@@ -320,7 +279,7 @@
       <h2>1日の締め</h2>
       <button class="btn ghost" onclick="copySummary()">📋 集計をコピー</button>
       <button class="btn danger" onclick="closeDay()">営業終了・データをリセット</button>
-      <p class="hint">「営業終了」を押すと本日の会計・経費・現金がリセットされます（ドリンク・割りもの登録と料金設定は残ります）。リセット前に集計のコピーをおすすめします。</p>
+      <p class="hint">「営業終了」を押すと本日の席・経費・現金がリセットされます（ドリンク・割りもの登録と料金設定は残ります）。リセット前に集計のコピーをおすすめします。</p>
     </div>
   </section>
 
@@ -372,7 +331,8 @@ function defaultState(){
     drinks: DEFAULT_DRINKS.map(d=>({...d})),
     mixers: DEFAULT_MIXERS.map(m=>({...m})),
     chargeAmount: 1000,
-    customers: [],
+    seqCounter: 0,
+    customers: [],   // 席（open/closed）
     expenses: [],
     cash,
   };
@@ -383,20 +343,30 @@ function load(){
     if(!s) return defaultState();
     const def = defaultState();
     const st = Object.assign(def, s, {cash: Object.assign(def.cash, s.cash||{})});
-    // 移行: 割りものが無ければ既定を追加
     if(!Array.isArray(st.mixers) || st.mixers.length===0) st.mixers = DEFAULT_MIXERS.map(m=>({...m}));
-    // 移行: ラムが無ければ追加
-    if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')){
-      st.drinks.push({id:'d_rum', name:'ラム', price:800});
-    }
+    if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')) st.drinks.push({id:'d_rum', name:'ラム', price:800});
+    // 席データの移行（旧バージョン互換）
+    st.customers = (st.customers||[]).map(c=>({
+      id: c.id,
+      seq: c.seq||0,
+      status: c.status || 'closed',
+      name: c.name!==undefined ? c.name : (c.guestName||''),
+      country: c.country || '不明',
+      people: c.people||1,
+      chargeOn: c.chargeOn!==undefined ? c.chargeOn : ((c.charge||0)>0),
+      tip: c.tip||0,
+      items: (c.items||[]).map(i=>({refId:i.refId, name:i.name, price:i.price, qty:i.qty, kind:i.kind|| (i.soda?'mixer':'drink')})),
+      openedAt: c.openedAt||c.id, closedAt: c.closedAt||null,
+    }));
+    st.seqCounter = st.customers.reduce((m,c)=>Math.max(m,c.seq||0), st.seqCounter||0);
     return st;
   }catch(e){ return defaultState(); }
 }
 function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
 
 let state = load();
-// 進行中の会計（保存しない）
-let order = { country:'', guestName:'', people:1, charge:true, items:[] };
+let reg = { name:'', tip:0, country:'', people:1, chargeOn:true };
+let expandedId = null;
 
 /* ---------- タブ ---------- */
 function switchTab(name, btn){
@@ -411,321 +381,291 @@ function switchTab(name, btn){
   window.scrollTo(0,0);
 }
 
-/* ---------- 会計：国・名前・人数 ---------- */
+/* ---------- 登録フォーム ---------- */
 function renderCountryButtons(){
   const wrap = document.getElementById('countryButtons');
   wrap.innerHTML = '';
   const otherVal = document.getElementById('otherCountry').value.trim();
   BIG_COUNTRIES.forEach(c=>{
     const b = document.createElement('button');
-    const on = (order.country===c.name && !otherVal);
+    const on = (reg.country===c.name && !otherVal);
     b.className = 'cbtn' + (on ? ' on':'');
     b.innerHTML = `<span class="flag">${c.flag}</span>${c.name}`;
     b.onclick = ()=>selectBigCountry(c.name);
     wrap.appendChild(b);
   });
-  // 名前欄の表示（日本のとき）
-  document.getElementById('nameField').style.display = (order.country==='日本' && !otherVal) ? 'block' : 'none';
 }
 function selectBigCountry(name){
-  order.country = name;
+  reg.country = name;
   document.getElementById('otherCountry').value = '';
-  if(name!=='日本'){ order.guestName=''; document.getElementById('guestName').value=''; }
   renderCountryButtons();
 }
 document.getElementById('otherCountry').addEventListener('input', e=>{
   const v = e.target.value.trim();
-  if(v){ order.country = v; order.guestName=''; }
+  if(v) reg.country = v;
   renderCountryButtons();
 });
-document.getElementById('guestName').addEventListener('input', e=>{ order.guestName = e.target.value.trim(); });
-
-function changePeople(d){
-  order.people = Math.max(1, order.people + d);
-  document.getElementById('peopleVal').textContent = order.people;
-  renderOrder();
+document.getElementById('regName').addEventListener('input', e=>{ reg.name = e.target.value; });
+document.getElementById('regTip').addEventListener('input', e=>{ reg.tip = Math.max(0,parseInt(e.target.value)||0); });
+function changeRegPeople(d){
+  reg.people = Math.max(1, reg.people + d);
+  document.getElementById('regPeopleVal').textContent = reg.people;
+  renderRegCharge();
 }
-
-/* ---------- 会計：ドリンク・割りもの ---------- */
-function toggleForm(id){ document.getElementById(id).classList.toggle('show'); }
-
-function renderDrinkButtons(){
-  const wrap = document.getElementById('drinkButtons');
-  wrap.innerHTML = '';
-  if(state.drinks.length===0){ wrap.innerHTML='<p class="hint">ドリンク未登録</p>'; return; }
-  state.drinks.forEach(d=>{
-    const b = document.createElement('button');
-    b.className = 'drink-btn';
-    b.innerHTML = `<div class="n">${escapeHtml(d.name)}</div><div class="p">${yen(d.price)}</div>`;
-    b.onclick = ()=>addItem(d,'drink');
-    wrap.appendChild(b);
-  });
+function renderRegCharge(){
+  reg.chargeOn = document.getElementById('regCharge').checked;
+  document.getElementById('regChargeSub').textContent =
+    `${yen(state.chargeAmount)} × ${reg.people}名 = ${yen(state.chargeAmount*reg.people)}`;
 }
-function renderMixerButtons(){
-  const wrap = document.getElementById('mixerButtons');
-  wrap.innerHTML = '';
-  if(state.mixers.length===0){ wrap.innerHTML='<p class="hint">割りもの未登録</p>'; return; }
-  state.mixers.forEach(m=>{
-    const b = document.createElement('button');
-    b.className = 'mix-btn';
-    b.innerHTML = `${escapeHtml(m.name)}<span class="p">${yen(m.price)}</span>`;
-    b.onclick = ()=>addItem(m,'mixer');
-    wrap.appendChild(b);
-  });
-}
-function addItem(src, kind){
-  const ex = order.items.find(i=>i.refId===src.id && i.kind===kind);
-  if(ex){ ex.qty++; }
-  else order.items.push({refId:src.id, name:src.name, price:src.price, qty:1, kind});
-  renderOrder();
-}
-function itemTotal(i){ return i.price * i.qty; }
-function changeQty(idx, d){
-  order.items[idx].qty += d;
-  if(order.items[idx].qty<=0) order.items.splice(idx,1);
-  renderOrder();
-}
-function orderTotal(){
-  let t = order.charge ? state.chargeAmount * order.people : 0;
-  order.items.forEach(i=>t+=itemTotal(i));
-  return t;
-}
-function renderOrder(){
-  order.charge = document.getElementById('chargeToggle').checked;
-  document.getElementById('chargeSub').textContent =
-    `${yen(state.chargeAmount)} × ${order.people}名 = ${yen(state.chargeAmount*order.people)}`;
-  const wrap = document.getElementById('orderItems');
-  wrap.innerHTML = '';
-  if(order.items.length===0) wrap.innerHTML='<div class="empty">ドリンク・割りものを選んでください</div>';
-  order.items.forEach((i,idx)=>{
-    const row = document.createElement('div');
-    row.className='item-row';
-    row.innerHTML = `
-      <div style="flex:1;">
-        <div class="name">${escapeHtml(i.name)}${i.kind==='mixer'?'<span class="tag">割</span>':''}</div>
-        <div class="sub">${yen(i.price)} × ${i.qty} ＝ ${yen(itemTotal(i))}</div>
-      </div>
-      <div class="mini-step">
-        <button onclick="changeQty(${idx},-1)">−</button>
-        <span class="v">${i.qty}</span>
-        <button onclick="changeQty(${idx},1)">＋</button>
-      </div>`;
-    wrap.appendChild(row);
-  });
-  document.getElementById('orderTotal').textContent = yen(orderTotal());
-  document.getElementById('seqBadge').textContent = `${state.customers.length+1}組目`;
-}
-function clearOrder(){
-  order = { country:'', guestName:'', people:1, charge:true, items:[] };
-  document.getElementById('otherCountry').value='';
-  document.getElementById('guestName').value='';
-  document.getElementById('peopleVal').textContent='1';
-  document.getElementById('chargeToggle').checked=true;
-  renderCountryButtons(); renderOrder();
-}
-function confirmOrder(){
-  if(order.items.length===0 && !order.charge){
-    alert('チャージかドリンクを入力してください'); return;
-  }
+function registerTab(){
+  state.seqCounter = (state.seqCounter||0)+1;
+  const id = Date.now();
   state.customers.push({
-    id: Date.now(),
-    seq: state.customers.length+1,
-    country: order.country || '不明',
-    guestName: order.guestName || '',
-    people: order.people,
-    charge: order.charge ? state.chargeAmount*order.people : 0,
-    items: order.items.map(i=>({...i, total:itemTotal(i)})),
-    total: orderTotal(),
+    id, seq: state.seqCounter, status:'open',
+    name: (reg.name||'').trim(),
+    country: reg.country || '不明',
+    people: reg.people,
+    chargeOn: reg.chargeOn,
+    tip: reg.tip||0,
+    items: [], openedAt:id, closedAt:null,
   });
+  expandedId = id;
   save();
-  clearOrder();
-  renderCustomers();
+  resetReg();
+  renderTabs();
+  document.getElementById('openList').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function resetReg(){
+  reg = { name:'', tip:0, country:'', people:1, chargeOn:true };
+  document.getElementById('regName').value='';
+  document.getElementById('regTip').value='';
+  document.getElementById('otherCountry').value='';
+  document.getElementById('regPeopleVal').textContent='1';
+  document.getElementById('regCharge').checked=true;
+  renderCountryButtons(); renderRegCharge();
 }
 
-/* ---------- 会計一覧 ---------- */
-function renderCustomers(){
-  const wrap = document.getElementById('customerList');
-  wrap.innerHTML='';
-  if(state.customers.length===0){ wrap.innerHTML='<div class="empty">まだ会計がありません</div>'; }
-  [...state.customers].reverse().forEach(c=>{
-    const drinks = c.items.map(i=>{
-      const soda = i.soda ? '(ソーダ)' : ''; // 旧データ互換
-      return `${i.name}${soda}×${i.qty}`;
-    }).join('、') || '—';
-    const nameStr = c.guestName ? `（${escapeHtml(c.guestName)}）` : '';
-    const div = document.createElement('div');
-    div.className='cust';
-    div.innerHTML = `
-      <div class="top">
-        <div class="meta"><span class="seq">${c.seq}組目</span>${escapeHtml(c.country)}${nameStr} ／ ${c.people}名</div>
-        <div class="amt">${yen(c.total)}</div>
-      </div>
-      <div class="drinks">${c.charge?`チャージ ${yen(c.charge)}　`:''}${escapeHtml(drinks)}</div>
-      <button class="del" onclick="deleteCustomer(${c.id})">この会計を削除</button>`;
-    wrap.appendChild(div);
-  });
-  const people = state.customers.reduce((s,c)=>s+c.people,0);
-  document.getElementById('custCount').textContent = `${state.customers.length}組 / ${people}名`;
-  document.getElementById('seqBadge').textContent = `${state.customers.length+1}組目`;
+/* ---------- 席の計算 ---------- */
+function findTab(id){ return state.customers.find(c=>c.id===id); }
+function itemTotal(i){ return i.price*i.qty; }
+function tabItemsTotal(c){ return c.items.reduce((s,i)=>s+itemTotal(i),0); }
+function tabCharge(c){ return c.chargeOn ? state.chargeAmount*c.people : 0; }
+function tabSales(c){ return tabCharge(c)+tabItemsTotal(c); }            // 売上（チャージ+飲物）
+function tabTotal(c){ return tabSales(c)+(c.tip||0); }                   // お客様の支払額（チップ込み）
+function itemsSummary(c){
+  return c.items.map(i=>`${i.name}${i.kind==='mixer'?'(割)':''}×${i.qty}`).join('、') || '注文なし';
 }
-function deleteCustomer(id){
-  if(!confirm('この会計を削除しますか？')) return;
-  state.customers = state.customers.filter(c=>c.id!==id);
-  state.customers.forEach((c,idx)=>c.seq=idx+1);
-  save(); renderCustomers();
+
+/* ---------- 席の表示 ---------- */
+function renderTabs(){
+  const opens = state.customers.filter(c=>c.status==='open');
+  const closeds = state.customers.filter(c=>c.status==='closed');
+  const openWrap = document.getElementById('openList');
+  const closedWrap = document.getElementById('closedList');
+  openWrap.innerHTML=''; closedWrap.innerHTML='';
+  if(opens.length===0) openWrap.innerHTML='<div class="empty">今は誰も滞在していません</div>';
+  opens.forEach(c=> openWrap.appendChild(c.id===expandedId ? buildEditor(c) : buildCompact(c)));
+  if(closeds.length===0) closedWrap.innerHTML='<div class="empty">会計済みはまだありません</div>';
+  closeds.slice().reverse().forEach(c=> closedWrap.appendChild(buildClosed(c)));
+  document.getElementById('openCount').textContent = `${opens.length}組 / ${opens.reduce((s,c)=>s+c.people,0)}名`;
+  document.getElementById('closedCount').textContent = `${closeds.length}組`;
+}
+function elFrom(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+
+function buildCompact(c){
+  const name = c.name ? escapeHtml(c.name) : 'お客様';
+  return elFrom(`
+    <div class="tab">
+      <div class="top">
+        <div><div class="who"><span class="seq">${c.seq}</span>${name}</div>
+        <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
+        <div class="amt">${yen(tabTotal(c))}</div>
+      </div>
+      <div class="drinks">${escapeHtml(itemsSummary(c))}</div>
+      <div class="row-btns">
+        <button class="btn ghost sm" style="flex:1;" onclick="toggleTabEdit(${c.id})">編集・追加</button>
+        <button class="btn primary sm" style="flex:1;" onclick="closeTab(${c.id})">会計する</button>
+      </div>
+    </div>`);
+}
+
+function buildEditor(c){
+  const drinkBtns = state.drinks.map(d=>
+    `<button class="drink-btn" onclick="addTabItem(${c.id},'drink','${d.id}')"><div class="n">${escapeHtml(d.name)}</div><div class="p">${yen(d.price)}</div></button>`).join('') || '<p class="hint">ドリンク未登録</p>';
+  const mixBtns = state.mixers.map(m=>
+    `<button class="mix-btn" onclick="addTabItem(${c.id},'mixer','${m.id}')">${escapeHtml(m.name)}<span class="p">${yen(m.price)}</span></button>`).join('') || '<p class="hint">割りもの未登録</p>';
+  const rows = c.items.map((i,idx)=>
+    `<div class="item-row"><div style="flex:1;"><div class="name">${escapeHtml(i.name)}${i.kind==='mixer'?'<span class="tag">割</span>':''}</div><div class="sub">${yen(i.price)} × ${i.qty} ＝ ${yen(itemTotal(i))}</div></div>
+     <div class="mini-step"><button onclick="changeTabQty(${c.id},${idx},-1)">−</button><span class="v">${i.qty}</span><button onclick="changeTabQty(${c.id},${idx},1)">＋</button></div></div>`).join('') || '<div class="empty">注文を追加してください</div>';
+
+  return elFrom(`
+    <div class="tab editing">
+      <div class="top">
+        <div class="who"><span class="seq">${c.seq}</span>${escapeHtml(c.country)}・編集中</div>
+        <div class="amt" id="ttl-${c.id}">${yen(tabTotal(c))}</div>
+      </div>
+      <div class="field-row" style="margin-top:12px;">
+        <div style="flex:1;"><span class="label">名前</span><input type="text" value="${escapeAttr(c.name)}" placeholder="お客様" oninput="setTabName(${c.id},this.value)"></div>
+        <div style="width:110px;"><span class="label">チップ</span><input type="number" inputmode="numeric" value="${c.tip||0}" oninput="setTabTip(${c.id},this.value)"></div>
+      </div>
+      <div style="margin-top:12px;"><span class="label">人数</span>
+        <div class="stepper"><button onclick="changeTabPeople(${c.id},-1)">−</button><span class="val">${c.people}</span><button onclick="changeTabPeople(${c.id},1)">＋</button></div>
+      </div>
+      <div class="toggle-row" style="margin-top:12px;">
+        <div><div style="font-size:15px;">チャージ</div><div style="font-size:12px;color:var(--muted);">${yen(state.chargeAmount)} × ${c.people}名 = ${yen(tabCharge(c))}</div></div>
+        <label class="switch"><input type="checkbox" ${c.chargeOn?'checked':''} onchange="toggleTabCharge(${c.id})"><span></span></label>
+      </div>
+      <span class="label" style="margin-top:14px;">ドリンク</span>
+      <div class="drink-grid">${drinkBtns}</div>
+      <span class="label" style="margin-top:12px;">割りもの</span>
+      <div class="mix-grid">${mixBtns}</div>
+      <span class="label" style="margin-top:14px;">注文内容</span>
+      <div>${rows}</div>
+      <div class="row-btns" style="margin-top:14px;">
+        <button class="btn ghost sm" style="flex:1;" onclick="toggleTabEdit(${c.id})">閉じる</button>
+        <button class="btn danger sm" style="width:64px;" onclick="deleteTab(${c.id})">削除</button>
+        <button class="btn primary sm" style="flex:1;" onclick="closeTab(${c.id})">会計する</button>
+      </div>
+    </div>`);
+}
+
+function buildClosed(c){
+  const name = c.name ? escapeHtml(c.name) : 'お客様';
+  return elFrom(`
+    <div class="tab">
+      <div class="top">
+        <div><div class="who"><span class="seq">${c.seq}</span>${name}</div>
+        <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
+        <div class="amt">${yen(tabTotal(c))}</div>
+      </div>
+      <div class="drinks">${c.chargeOn?`チャージ ${yen(tabCharge(c))}　`:''}${escapeHtml(itemsSummary(c))}</div>
+      <div class="row-btns">
+        <button class="btn ghost sm" style="flex:1;" onclick="reopenTab(${c.id})">滞在に戻す</button>
+        <button class="btn danger sm" style="flex:1;" onclick="deleteTab(${c.id})">削除</button>
+      </div>
+    </div>`);
+}
+
+/* ---------- 席の操作 ---------- */
+function toggleTabEdit(id){ expandedId = (expandedId===id ? null : id); renderTabs(); }
+function setTabName(id,val){ const c=findTab(id); if(!c)return; c.name=val; save(); }
+function setTabTip(id,val){ const c=findTab(id); if(!c)return; c.tip=Math.max(0,parseInt(val)||0); save(); const el=document.getElementById('ttl-'+id); if(el) el.textContent=yen(tabTotal(c)); }
+function changeTabPeople(id,d){ const c=findTab(id); if(!c)return; c.people=Math.max(1,c.people+d); save(); renderTabs(); }
+function toggleTabCharge(id){ const c=findTab(id); if(!c)return; c.chargeOn=!c.chargeOn; save(); renderTabs(); }
+function addTabItem(id, kind, refId){
+  const c=findTab(id); if(!c)return;
+  const list = kind==='mixer' ? state.mixers : state.drinks;
+  const src = list.find(x=>x.id===refId); if(!src)return;
+  const ex = c.items.find(i=>i.refId===refId && i.kind===kind);
+  if(ex) ex.qty++;
+  else c.items.push({refId, name:src.name, price:src.price, qty:1, kind});
+  save(); renderTabs();
+}
+function changeTabQty(id, idx, d){
+  const c=findTab(id); if(!c)return;
+  c.items[idx].qty += d;
+  if(c.items[idx].qty<=0) c.items.splice(idx,1);
+  save(); renderTabs();
+}
+function closeTab(id){
+  const c=findTab(id); if(!c)return;
+  if(!confirm(`${c.name||'お客様'} を会計して締めますか？\n合計 ${yen(tabTotal(c))}`)) return;
+  c.status='closed'; c.closedAt=Date.now();
+  if(expandedId===id) expandedId=null;
+  save(); renderTabs();
+}
+function reopenTab(id){ const c=findTab(id); if(!c)return; c.status='open'; c.closedAt=null; save(); renderTabs(); }
+function deleteTab(id){
+  const c=findTab(id); if(!c)return;
+  if(!confirm(`${c.name||'お客様'} の記録を削除しますか？`)) return;
+  state.customers = state.customers.filter(x=>x.id!==id);
+  if(expandedId===id) expandedId=null;
+  save(); renderTabs();
 }
 
 /* ---------- ドリンク・割りもの管理 ---------- */
 function renderDrinkMaster(){
   document.getElementById('chargeAmtInput').value = state.chargeAmount;
-  const wrap = document.getElementById('drinkMaster');
-  wrap.innerHTML='';
+  const wrap = document.getElementById('drinkMaster'); wrap.innerHTML='';
   state.drinks.forEach(d=>{
-    const row = document.createElement('div');
-    row.className='master-row';
-    row.innerHTML = `
+    wrap.appendChild(elFrom(`<div class="master-row">
       <input class="mn" type="text" value="${escapeAttr(d.name)}" onchange="editDrink('${d.id}','name',this.value)">
       <input class="mp" type="number" inputmode="numeric" value="${d.price}" onchange="editDrink('${d.id}','price',this.value)">
-      <button class="del" onclick="deleteDrink('${d.id}')">×</button>`;
-    wrap.appendChild(row);
+      <button class="del" onclick="deleteDrink('${d.id}')">×</button></div>`));
   });
   if(state.drinks.length===0) wrap.innerHTML='<div class="empty">ドリンク未登録</div>';
 }
 function renderMixerMaster(){
-  const wrap = document.getElementById('mixerMaster');
-  wrap.innerHTML='';
+  const wrap = document.getElementById('mixerMaster'); wrap.innerHTML='';
   state.mixers.forEach(m=>{
-    const row = document.createElement('div');
-    row.className='master-row';
-    row.innerHTML = `
+    wrap.appendChild(elFrom(`<div class="master-row">
       <input class="mn" type="text" value="${escapeAttr(m.name)}" onchange="editMixer('${m.id}','name',this.value)">
       <input class="mp" type="number" inputmode="numeric" value="${m.price}" onchange="editMixer('${m.id}','price',this.value)">
-      <button class="del" onclick="deleteMixer('${m.id}')">×</button>`;
-    wrap.appendChild(row);
+      <button class="del" onclick="deleteMixer('${m.id}')">×</button></div>`));
   });
   if(state.mixers.length===0) wrap.innerHTML='<div class="empty">割りもの未登録</div>';
 }
-function editDrink(id, field, val){
-  const d = state.drinks.find(x=>x.id===id); if(!d) return;
-  if(field==='price') d.price = Math.max(0, parseInt(val)||0);
-  else d.name = val.trim() || d.name;
-  save(); renderDrinkButtons();
-}
-function editMixer(id, field, val){
-  const m = state.mixers.find(x=>x.id===id); if(!m) return;
-  if(field==='price') m.price = Math.max(0, parseInt(val)||0);
-  else m.name = val.trim() || m.name;
-  save(); renderMixerButtons();
-}
-function deleteDrink(id){
-  if(!confirm('このドリンクを削除しますか？')) return;
-  state.drinks = state.drinks.filter(d=>d.id!==id);
-  save(); renderDrinkMaster(); renderDrinkButtons();
-}
-function deleteMixer(id){
-  if(!confirm('この割りものを削除しますか？')) return;
-  state.mixers = state.mixers.filter(m=>m.id!==id);
-  save(); renderMixerMaster(); renderMixerButtons();
-}
+function editDrink(id, field, val){ const d=state.drinks.find(x=>x.id===id); if(!d)return; if(field==='price') d.price=Math.max(0,parseInt(val)||0); else d.name=val.trim()||d.name; save(); }
+function editMixer(id, field, val){ const m=state.mixers.find(x=>x.id===id); if(!m)return; if(field==='price') m.price=Math.max(0,parseInt(val)||0); else m.name=val.trim()||m.name; save(); }
+function deleteDrink(id){ if(!confirm('このドリンクを削除しますか？'))return; state.drinks=state.drinks.filter(d=>d.id!==id); save(); renderDrinkMaster(); }
+function deleteMixer(id){ if(!confirm('この割りものを削除しますか？'))return; state.mixers=state.mixers.filter(m=>m.id!==id); save(); renderMixerMaster(); }
 function addDrink(){
-  const name = document.getElementById('newDrinkName').value.trim();
-  const price = parseInt(document.getElementById('newDrinkPrice').value)||0;
+  const name=document.getElementById('newDrinkName').value.trim();
+  const price=parseInt(document.getElementById('newDrinkPrice').value)||0;
   if(!name){ alert('お酒の名前を入力してください'); return; }
   state.drinks.push({id:'d'+Date.now(), name, price});
-  document.getElementById('newDrinkName').value='';
-  document.getElementById('newDrinkPrice').value='';
-  save(); renderDrinkMaster(); renderDrinkButtons();
+  document.getElementById('newDrinkName').value=''; document.getElementById('newDrinkPrice').value='';
+  save(); renderDrinkMaster();
 }
 function addMixer(){
-  const name = document.getElementById('newMixName').value.trim();
-  const price = parseInt(document.getElementById('newMixPrice').value)||0;
+  const name=document.getElementById('newMixName').value.trim();
+  const price=parseInt(document.getElementById('newMixPrice').value)||0;
   if(!name){ alert('割りものの名前を入力してください'); return; }
   state.mixers.push({id:'m'+Date.now(), name, price});
-  document.getElementById('newMixName').value='';
-  document.getElementById('newMixPrice').value='100';
-  save(); renderMixerMaster(); renderMixerButtons();
+  document.getElementById('newMixName').value=''; document.getElementById('newMixPrice').value='100';
+  save(); renderMixerMaster();
 }
-// 会計画面からの追加
-function addDrinkInline(){
-  const name = document.getElementById('ckDrinkName').value.trim();
-  const price = parseInt(document.getElementById('ckDrinkPrice').value)||0;
-  if(!name){ alert('名前を入力してください'); return; }
-  const d = {id:'d'+Date.now(), name, price};
-  state.drinks.push(d); save();
-  document.getElementById('ckDrinkName').value='';
-  document.getElementById('ckDrinkPrice').value='';
-  document.getElementById('drinkForm').classList.remove('show');
-  renderDrinkButtons();
-  addItem(d,'drink'); // 登録してそのまま注文に追加
-}
-function addMixerInline(){
-  const name = document.getElementById('ckMixName').value.trim();
-  const price = parseInt(document.getElementById('ckMixPrice').value)||0;
-  if(!name){ alert('名前を入力してください'); return; }
-  const m = {id:'m'+Date.now(), name, price};
-  state.mixers.push(m); save();
-  document.getElementById('ckMixName').value='';
-  document.getElementById('ckMixPrice').value='100';
-  document.getElementById('mixerForm').classList.remove('show');
-  renderMixerButtons();
-  addItem(m,'mixer');
-}
-function setChargeAmt(v){ state.chargeAmount=Math.max(0,parseInt(v)||0); save(); renderOrder(); }
+function setChargeAmt(v){ state.chargeAmount=Math.max(0,parseInt(v)||0); save(); renderRegCharge(); }
 
-/* ---------- 現金集計 ---------- */
+/* ---------- 現金 ---------- */
 function renderCash(){
-  const wrap = document.getElementById('cashList');
-  wrap.innerHTML='';
+  const wrap=document.getElementById('cashList'); wrap.innerHTML='';
   DENOMS.forEach(d=>{
-    const cnt = state.cash[d]||0;
-    const row = document.createElement('div');
-    row.className='denom-row';
-    row.innerHTML = `
-      <span class="d">${yen(d)}</span>
+    const cnt=state.cash[d]||0;
+    wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
       <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCash(${d},this.value)">
-      <span class="x">枚</span>
-      <span class="sub">${yen(d*cnt)}</span>`;
-    wrap.appendChild(row);
+      <span class="x">枚</span><span class="sub">${yen(d*cnt)}</span></div>`));
   });
   document.getElementById('cashTotal').textContent = yen(cashTotal());
 }
 function cashTotal(){ return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0); }
 function setCash(d,v){ state.cash[d]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
-function resetCash(){
-  if(!confirm('枚数をすべて0に戻しますか？')) return;
-  DENOMS.forEach(d=>state.cash[d]=0); save(); renderCash();
-}
+function resetCash(){ if(!confirm('枚数をすべて0に戻しますか？'))return; DENOMS.forEach(d=>state.cash[d]=0); save(); renderCash(); }
 
 /* ---------- 経費 ---------- */
 function renderExpenses(){
-  const wrap = document.getElementById('expenseList');
-  wrap.innerHTML='';
+  const wrap=document.getElementById('expenseList'); wrap.innerHTML='';
   if(state.expenses.length===0) wrap.innerHTML='<div class="empty">経費なし</div>';
   state.expenses.forEach(e=>{
-    const row=document.createElement('div');
-    row.className='exp-row';
-    row.innerHTML=`<span class="l">${escapeHtml(e.label)}</span><span class="a">${yen(e.amount)}</span><button class="del" onclick="deleteExpense(${e.id})">×</button>`;
-    wrap.appendChild(row);
+    wrap.appendChild(elFrom(`<div class="exp-row"><span class="l">${escapeHtml(e.label)}</span><span class="a">${yen(e.amount)}</span><button class="del" onclick="deleteExpense(${e.id})">×</button></div>`));
   });
   document.getElementById('expenseTotal').textContent = yen(expenseTotal());
 }
 function expenseTotal(){ return state.expenses.reduce((s,e)=>s+e.amount,0); }
 function addExpense(){
-  const label = document.getElementById('expLabel').value.trim() || '経費';
-  const amount = parseInt(document.getElementById('expAmount').value)||0;
+  const label=document.getElementById('expLabel').value.trim()||'経費';
+  const amount=parseInt(document.getElementById('expAmount').value)||0;
   if(amount<=0){ alert('金額を入力してください'); return; }
   state.expenses.push({id:Date.now(), label, amount});
-  document.getElementById('expLabel').value='';
-  document.getElementById('expAmount').value='';
+  document.getElementById('expLabel').value=''; document.getElementById('expAmount').value='';
   save(); renderExpenses();
 }
-function deleteExpense(id){
-  state.expenses=state.expenses.filter(e=>e.id!==id); save(); renderExpenses();
-}
+function deleteExpense(id){ state.expenses=state.expenses.filter(e=>e.id!==id); save(); renderExpenses(); }
 
 /* ---------- 集計 ---------- */
-function salesTotal(){ return state.customers.reduce((s,c)=>s+c.total,0); }
-function chargeTotal(){ return state.customers.reduce((s,c)=>s+c.charge,0); }
+function salesTotal(){ return state.customers.reduce((s,c)=>s+tabSales(c),0); }
+function chargeTotal(){ return state.customers.reduce((s,c)=>s+tabCharge(c),0); }
+function tipTotal(){ return state.customers.reduce((s,c)=>s+(c.tip||0),0); }
 function drinkSales(){ return salesTotal()-chargeTotal(); }
 function countryBreakdown(){
   const m={};
@@ -733,21 +673,20 @@ function countryBreakdown(){
   return Object.entries(m).sort((a,b)=>b[1]-a[1]);
 }
 function renderSummary(){
-  const sales=salesTotal(), exp=expenseTotal(), cash=cashTotal();
+  const sales=salesTotal(), exp=expenseTotal(), cash=cashTotal(), tip=tipTotal();
+  const opens=state.customers.filter(c=>c.status==='open');
   const groups=state.customers.length;
   const people=state.customers.reduce((s,c)=>s+c.people,0);
   const net=sales-exp;
   const cb=countryBreakdown();
   const csHtml = cb.length? cb.map(([k,v])=>`<span class="cs">${escapeHtml(k)} <b>${v}名</b></span>`).join('') : '<span class="hint">データなし</span>';
-
   document.getElementById('summary').innerHTML = `
-    <div class="sum-big">
-      <span class="t">本日の売上</span>
-      <span class="v">${yen(sales)}</span>
-    </div>
+    <div class="sum-big"><span class="t">本日の売上</span><span class="v">${yen(sales)}</span></div>
     <div class="sum-line"><span>来客数</span><span class="v">${groups}組 / ${people}名</span></div>
+    <div class="sum-line"><span>うち滞在中</span><span class="v">${opens.length}組</span></div>
     <div class="sum-line"><span>チャージ合計</span><span class="v">${yen(chargeTotal())}</span></div>
     <div class="sum-line"><span>ドリンク・割りもの売上</span><span class="v">${yen(drinkSales())}</span></div>
+    <div class="sum-line"><span>チップ合計</span><span class="v">${yen(tip)}</span></div>
     <div class="sum-line"><span>経費合計</span><span class="v neg">−${yen(exp)}</span></div>
     <div class="sum-line"><span>売上 − 経費</span><span class="v ${net>=0?'pos':'neg'}">${yen(net)}</span></div>
     <div class="sum-line"><span>現金実数（数えた金額）</span><span class="v">${yen(cash)}</span></div>
@@ -762,6 +701,7 @@ function summaryText(){
     `来客: ${state.customers.length}組 / ${state.customers.reduce((s,c)=>s+c.people,0)}名`,
     `チャージ合計: ${yen(chargeTotal())}`,
     `ドリンク・割りもの売上: ${yen(drinkSales())}`,
+    `チップ合計: ${yen(tipTotal())}`,
     `経費合計: ${yen(expenseTotal())}`,
     `売上−経費: ${yen(salesTotal()-expenseTotal())}`,
     `現金実数: ${yen(cashTotal())}`,
@@ -775,12 +715,12 @@ function copySummary(){
 }
 function closeDay(){
   if(!confirm('営業を終了して本日のデータをリセットしますか？\n（ドリンク・割りもの登録と料金設定は残ります）')) return;
-  state.customers=[]; state.expenses=[];
+  state.customers=[]; state.expenses=[]; state.seqCounter=0; expandedId=null;
   DENOMS.forEach(d=>state.cash[d]=0);
   state.date=today();
   save();
   document.getElementById('todayLabel').textContent=jpDate();
-  clearOrder(); renderCustomers(); renderSummary(); renderCash(); renderExpenses();
+  resetReg(); renderTabs(); renderSummary(); renderCash(); renderExpenses();
   alert('リセットしました。今日もがんばってください！');
 }
 
@@ -792,10 +732,8 @@ function escapeAttr(s){ return escapeHtml(s).replace(/'/g,'&#39;'); }
 function init(){
   document.getElementById('todayLabel').textContent = jpDate();
   renderCountryButtons();
-  renderDrinkButtons();
-  renderMixerButtons();
-  renderOrder();
-  renderCustomers();
+  renderRegCharge();
+  renderTabs();
 }
 init();
 </script>
