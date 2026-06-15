@@ -59,6 +59,14 @@
   .chip.on{background:var(--accent); border-color:var(--accent);}
   .chip.on button{color:#241a0e; font-weight:700;}
 
+  .startup{position:fixed; inset:0; z-index:100; background:var(--bg); display:none; align-items:flex-start; justify-content:center; overflow:auto; padding:0 20px;}
+  .startup.show{display:flex;}
+  .startup-card{width:100%; max-width:420px; padding:calc(44px + env(safe-area-inset-top)) 0 40px;}
+  .startup-card h2{color:var(--accent); text-align:center; font-size:22px; margin:0 0 6px;}
+  .staffbar{display:flex; align-items:center; gap:8px; font-size:14px; color:var(--muted); margin-bottom:14px; padding:11px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px;}
+  .staffbar b{color:var(--accent); font-size:16px;}
+  .staffbar button{margin-left:auto; background:var(--card2); border:1px solid var(--accent); color:var(--accent); border-radius:8px; padding:7px 16px; font-size:13px; font-weight:700;}
+
   .country-big{display:flex; flex-direction:column; gap:9px; margin-bottom:12px;}
   .cbtn{display:flex; align-items:center; gap:12px; padding:15px 16px; font-size:17px; font-weight:700;
     background:var(--card2); border:1px solid var(--line); border-radius:13px; color:var(--text);}
@@ -172,6 +180,21 @@
 </style>
 </head>
 <body>
+
+<div id="startup" class="startup">
+  <div class="startup-card">
+    <h2>🍶 営業スタート</h2>
+    <p class="hint" style="text-align:center;">今日の担当とスタート金を入れてください</p>
+    <span class="label" style="margin-top:18px;">担当（あなたの名前）</span>
+    <input type="text" id="suName" placeholder="例：ゆうじ" autocomplete="off">
+    <div class="chips" id="suStaffChips" style="margin-top:10px;"></div>
+    <span class="label" style="margin-top:10px;">スタート金（つり銭）</span>
+    <input type="number" id="suStartCash" inputmode="numeric" placeholder="例：30000">
+    <button class="btn primary" onclick="startBusiness()">この内容で始める</button>
+    <p class="hint" style="text-align:center;">名前を入れると、登録するお客様の売上がその人の担当になります（空でもOK）。</p>
+  </div>
+</div>
+
 <header>
   <h1>🍶 Bar 会計ノート</h1>
   <div class="date" id="todayLabel"></div>
@@ -181,29 +204,13 @@
 
   <!-- ===== 登録 ===== -->
   <section id="tab-register" class="active">
-    <div class="card">
-      <h2>担当（あなたの名前）</h2>
-      <div class="chips" id="staffChips"></div>
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="staffInput" placeholder="名前を入力（例：ゆうじ）" autocomplete="off" style="flex:1;">
-        <button class="btn primary sm" style="width:96px;" onclick="addStaff()">担当にする</button>
-      </div>
-      <div id="currentStaffMsg" class="hint" style="margin-top:8px;"></div>
-    </div>
+    <div class="staffbar">担当：<b id="staffBarName">未設定</b><button onclick="openStartup()">変更</button></div>
 
     <div class="card">
       <h2>お客様の登録</h2>
 
-      <div class="field-row">
-        <div style="flex:1;">
-          <span class="label">名前</span>
-          <input type="text" id="regName" placeholder="お客様" autocomplete="off">
-        </div>
-        <div style="width:118px;">
-          <span class="label">チップ</span>
-          <input type="number" id="regTip" placeholder="0" inputmode="numeric">
-        </div>
-      </div>
+      <span class="label">名前（任意）</span>
+      <input type="text" id="regName" placeholder="お客様" autocomplete="off">
 
       <span class="label" style="margin-top:14px;">国名</span>
       <div class="country-big" id="countryButtons"></div>
@@ -474,7 +481,6 @@ document.getElementById('otherCountry').addEventListener('input', e=>{
   renderCountryButtons();
 });
 document.getElementById('regName').addEventListener('input', e=>{ reg.name = e.target.value; });
-document.getElementById('regTip').addEventListener('input', e=>{ reg.tip = Math.max(0,parseInt(e.target.value)||0); });
 function changeRegPeople(d){
   reg.people = Math.max(1, reg.people + d);
   document.getElementById('regPeopleVal').textContent = reg.people;
@@ -485,40 +491,46 @@ function renderRegCharge(){
   document.getElementById('regChargeSub').textContent =
     `${yen(state.chargeAmount)} × ${reg.people}名 = ${yen(state.chargeAmount*reg.people)}`;
 }
-/* ---------- 担当スタッフ ---------- */
-function renderStaff(){
-  const wrap=document.getElementById('staffChips'); wrap.innerHTML='';
-  if(state.staffNames.length===0){
-    wrap.innerHTML='<span class="hint">まだ担当が登録されていません。名前を入力してください。</span>';
-  }
-  state.staffNames.forEach((n,idx)=>{
-    const on = n===state.currentStaff;
-    wrap.appendChild(elFrom(`<span class="chip ${on?'on':''}"><button class="sel" onclick="setStaffByIdx(${idx})">${escapeHtml(n)}</button><button class="rm" onclick="removeStaffByIdx(${idx})">×</button></span>`));
-  });
-  const msg=document.getElementById('currentStaffMsg');
-  msg.textContent = state.currentStaff
-    ? `現在の担当：${state.currentStaff}（これから登録するお客様はこの人の売上になります）`
-    : '担当が未選択です。お客様の売上は「担当なし」になります。';
+/* ---------- スタート画面・担当スタッフ ---------- */
+function openStartup(){
+  document.getElementById('suName').value = state.currentStaff || '';
+  document.getElementById('suStartCash').value = state.startCash || '';
+  renderStartupStaff();
+  document.getElementById('startup').classList.add('show');
 }
+function closeStartup(){ document.getElementById('startup').classList.remove('show'); }
+function renderStartupStaff(){
+  const wrap=document.getElementById('suStaffChips'); wrap.innerHTML='';
+  if(state.staffNames.length===0){ wrap.innerHTML='<span class="hint">登録済みの名前はまだありません</span>'; return; }
+  state.staffNames.forEach((n,idx)=>{
+    wrap.appendChild(elFrom(`<span class="chip"><button class="sel" onclick="pickStartupStaff(${idx})">${escapeHtml(n)}</button><button class="rm" onclick="removeStaffByIdx(${idx})">×</button></span>`));
+  });
+}
+function pickStartupStaff(i){ document.getElementById('suName').value = state.staffNames[i]; }
 function setStaff(name){
   name=(name||'').trim();
   state.currentStaff = name;
   if(name && !state.staffNames.includes(name)) state.staffNames.push(name);
-  save(); renderStaff();
-}
-function setStaffByIdx(i){ setStaff(state.staffNames[i]); }
-function addStaff(){
-  const el=document.getElementById('staffInput');
-  const v=el.value.trim();
-  if(!v){ alert('名前を入力してください'); return; }
-  setStaff(v); el.value='';
+  save();
 }
 function removeStaffByIdx(i){
   const n=state.staffNames[i];
-  if(!confirm(`担当リストから「${n}」を消しますか？（過去の売上の記録は残ります）`)) return;
+  if(!confirm(`登録した名前「${n}」を消しますか？（過去の売上の記録は残ります）`)) return;
   state.staffNames.splice(i,1);
   if(state.currentStaff===n) state.currentStaff='';
-  save(); renderStaff();
+  save(); renderStartupStaff();
+}
+function startBusiness(){
+  const name=document.getElementById('suName').value.trim();
+  const sc=Math.max(0,parseInt(document.getElementById('suStartCash').value)||0);
+  setStaff(name);
+  state.startCash=sc; save();
+  renderStaffBar();
+  closeStartup();
+}
+function renderStaffBar(){
+  const el=document.getElementById('staffBarName');
+  if(el) el.textContent = state.currentStaff || '未設定';
 }
 
 function uniqueId(arr){ let id=Date.now(); while(arr.some(x=>x.id===id)) id++; return id; }
@@ -542,7 +554,6 @@ function registerTab(){
 function resetReg(){
   reg = { name:'', tip:0, country:'', people:1, chargeOn:true };
   document.getElementById('regName').value='';
-  document.getElementById('regTip').value='';
   document.getElementById('otherCountry').value='';
   document.getElementById('regPeopleVal').textContent='1';
   document.getElementById('regCharge').checked=true;
@@ -951,8 +962,9 @@ function closeDay(){
   state.date=today();
   save();
   document.getElementById('todayLabel').textContent=jpDate();
-  resetReg(); renderTabs(); renderSummary(); renderCash(); renderExpenses();
+  resetReg(); renderStaffBar(); renderTabs(); renderSummary(); renderCash(); renderExpenses();
   alert('リセットしました。今日もがんばってください！');
+  openStartup();
 }
 
 /* ---------- utils ---------- */
@@ -962,10 +974,11 @@ function escapeAttr(s){ return escapeHtml(s).replace(/'/g,'&#39;'); }
 /* ---------- 初期化 ---------- */
 function init(){
   document.getElementById('todayLabel').textContent = jpDate();
-  renderStaff();
+  renderStaffBar();
   renderCountryButtons();
   renderRegCharge();
   renderTabs();
+  openStartup();
 }
 init();
 </script>
