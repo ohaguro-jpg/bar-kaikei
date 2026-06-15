@@ -77,9 +77,9 @@
   .item-row .name{flex:1; font-size:15px;}
   .item-row .tag{font-size:10px; background:#2f4654; color:#cfe6f5; border-radius:5px; padding:1px 5px; margin-left:6px;}
   .item-row .sub{font-size:12px; color:var(--muted);}
-  .mini-step{display:flex; align-items:center; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
-  .mini-step button{width:32px; height:32px; background:var(--card2); border:none; color:var(--accent); font-size:18px; font-weight:700;}
-  .mini-step .v{min-width:26px; text-align:center; font-size:14px;}
+  .mini-step{display:flex; align-items:center; gap:0; border:1px solid var(--accent2); border-radius:9px; overflow:hidden;}
+  .mini-step button{width:40px; height:40px; background:var(--card); border:none; color:var(--accent); font-size:21px; font-weight:700;}
+  .mini-step .v{min-width:34px; text-align:center; font-size:16px; font-weight:700;}
 
   .toggle-row{display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:11px 13px;}
   .switch{position:relative; width:50px; height:30px; flex:none;}
@@ -96,19 +96,21 @@
   .btn{display:block; width:100%; border:none; border-radius:12px; padding:15px; font-size:16px; font-weight:700; margin-top:10px;}
   .btn.primary{background:var(--accent); color:#241a0e;}
   .btn.ghost{background:var(--card2); color:var(--text); border:1px solid var(--line);}
+  .btn.outline{background:transparent; color:var(--accent); border:2px solid var(--accent);}
   .btn.danger{background:transparent; color:var(--bad); border:1px solid var(--bad);}
-  .btn.sm{padding:11px; font-size:14px; margin-top:0;}
+  .btn.sm{padding:13px; font-size:15px; margin-top:0;}
   .btn:active{opacity:.85;}
 
-  .tab{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
-  .tab.editing{border-color:var(--accent);}
+  .tab{background:var(--card2); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px;}
+  .tab.editing{border-color:var(--accent); border-width:2px;}
   .tab .top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
-  .tab .seq{display:inline-block; background:var(--accent); color:#241a0e; font-weight:700; font-size:12px; border-radius:6px; padding:2px 7px; margin-right:8px;}
-  .tab .who{font-size:15px; font-weight:600;}
-  .tab .meta{font-size:12px; color:var(--muted); margin-top:2px;}
-  .tab .amt{font-size:19px; font-weight:800; color:var(--accent); white-space:nowrap;}
-  .tab .drinks{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5;}
-  .row-btns{display:flex; gap:8px; margin-top:10px;}
+  .tab .seq{display:inline-block; background:var(--accent); color:#241a0e; font-weight:700; font-size:13px; border-radius:6px; padding:3px 8px; margin-right:8px;}
+  .tab .who{font-size:18px; font-weight:700;}
+  .tab .meta{font-size:13px; color:var(--muted); margin-top:3px;}
+  .tab .amt{font-size:24px; font-weight:800; color:var(--accent); white-space:nowrap;}
+  .tab .drinks{font-size:13px; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .tab .ordered{margin-top:12px; border-top:1px solid var(--line); padding-top:4px;}
+  .row-btns{display:flex; gap:8px; margin-top:12px;}
 
   .denom-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
   .denom-row:last-child{border-bottom:none;}
@@ -511,6 +513,11 @@ function elFrom(html){ const d=document.createElement('div'); d.innerHTML=html.t
 
 function buildCompact(c){
   const name = c.name ? escapeHtml(c.name) : 'お客様';
+  const ordered = c.items.length
+    ? `<div class="ordered">` + c.items.map((i,idx)=>
+        `<div class="item-row"><div style="flex:1;"><div class="name">${escapeHtml(i.name)}${i.kind==='mixer'?'<span class="tag">割</span>':''}</div><div class="sub">${yen(i.price)} × ${i.qty} ＝ ${yen(itemTotal(i))}</div></div>
+         <div class="mini-step"><button onclick="changeTabQty(${c.id},${idx},-1)">−</button><span class="v">${i.qty}</span><button onclick="changeTabQty(${c.id},${idx},1)">＋</button></div></div>`).join('') + `</div>`
+    : `<div class="hint" style="padding:10px 0;">まだ注文がありません。「飲み物を追加」から選んでください。</div>`;
   return elFrom(`
     <div class="tab">
       <div class="top">
@@ -518,9 +525,9 @@ function buildCompact(c){
         <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
         <div class="amt">${yen(tabTotal(c))}</div>
       </div>
-      <div class="drinks">${escapeHtml(itemsSummary(c))}</div>
+      ${ordered}
       <div class="row-btns">
-        <button class="btn ghost sm" style="flex:1;" onclick="toggleTabEdit(${c.id})">編集・追加</button>
+        <button class="btn outline sm" style="flex:1;" onclick="toggleTabEdit(${c.id})">＋ 飲み物を追加</button>
         <button class="btn primary sm" style="flex:1;" onclick="closeTab(${c.id})">会計する</button>
       </div>
     </div>`);
@@ -557,7 +564,7 @@ function buildEditor(c){
       <span class="label" style="margin-top:14px;">注文内容</span>
       <div>${rows}</div>
       <div class="row-btns" style="margin-top:14px;">
-        <button class="btn ghost sm" style="flex:1;" onclick="toggleTabEdit(${c.id})">閉じる</button>
+        <button class="btn outline sm" style="flex:1;" onclick="toggleTabEdit(${c.id})">閉じる</button>
         <button class="btn danger sm" style="width:64px;" onclick="deleteTab(${c.id})">削除</button>
         <button class="btn primary sm" style="flex:1;" onclick="closeTab(${c.id})">会計する</button>
       </div>
@@ -574,7 +581,7 @@ function buildClosed(c){
       </div>
       <div class="drinks">${c.chargeOn?`チャージ ${yen(tabCharge(c))}　`:''}${escapeHtml(itemsSummary(c))}</div>
       <div class="row-btns">
-        <button class="btn ghost sm" style="flex:1;" onclick="reopenTab(${c.id})">滞在に戻す</button>
+        <button class="btn outline sm" style="flex:1;" onclick="reopenTab(${c.id})">滞在に戻す</button>
         <button class="btn danger sm" style="flex:1;" onclick="deleteTab(${c.id})">削除</button>
       </div>
     </div>`);
