@@ -22,7 +22,7 @@
   body{
     background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;
-    padding-bottom:calc(72px + env(safe-area-inset-bottom));
+    padding-bottom:calc(74px + env(safe-area-inset-bottom));
     -webkit-text-size-adjust:100%;
   }
   header{
@@ -132,18 +132,31 @@
   .sum-line{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:15px;}
   .sum-line:last-child{border-bottom:none;}
   .sum-line .v{font-weight:700;}
+  .sum-line.minus span:first-child:before{content:"− "; color:var(--bad);}
+  .sum-line.plus span:first-child:before{content:"＋ "; color:var(--good);}
   .sum-big{display:flex; justify-content:space-between; align-items:baseline; background:linear-gradient(135deg,#33260f,#2a2018); border:1px solid var(--accent2); border-radius:12px; padding:16px; margin:6px 0 4px;}
   .sum-big .t{font-size:14px;}
   .sum-big .v{font-size:30px; font-weight:800; color:var(--accent);}
+  .sum-big.green{background:linear-gradient(135deg,#16331f,#1f2a20); border-color:#2f6b3f;}
+  .sum-big.green .v{color:var(--good);}
   .country-stat{display:flex; flex-wrap:wrap; gap:6px;}
   .country-stat .cs{background:var(--card2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px;}
   .country-stat .cs b{color:var(--accent);}
   .pos{color:var(--good);} .neg{color:var(--bad);}
   .hint{font-size:12px; color:var(--muted); line-height:1.6;}
+  .chk{padding:10px 12px; border-radius:10px; font-size:14px; font-weight:700; text-align:center; margin-top:6px;}
+  .chk.ok{background:#16331f; color:var(--good);}
+  .chk.ng{background:#3a1d18; color:var(--bad);}
+
+  .list-row{padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .list-row:last-child{border-bottom:none;}
+  .list-row .h{display:flex; justify-content:space-between; font-weight:600; font-size:14px;}
+  .list-row .d{color:var(--muted); margin-top:3px; line-height:1.5;}
+  .list-row .open{color:var(--blue); font-size:11px;}
 
   nav{position:fixed; bottom:0; left:0; right:0; z-index:20; background:#221a12; border-top:1px solid var(--line); display:flex; padding-bottom:env(safe-area-inset-bottom);}
   nav button{flex:1; background:none; border:none; color:var(--muted); padding:9px 0 8px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:3px;}
-  nav button .ic{font-size:21px; line-height:1;}
+  nav button .ic{font-size:20px; line-height:1;}
   nav button.active{color:var(--accent);}
   .empty{text-align:center; color:var(--muted); font-size:14px; padding:18px 0;}
 </style>
@@ -156,8 +169,8 @@
 
 <div class="wrap">
 
-  <!-- ===== 会計（席） ===== -->
-  <section id="tab-kaikei" class="active">
+  <!-- ===== 登録 ===== -->
+  <section id="tab-register" class="active">
     <div class="card">
       <h2>お客様の登録</h2>
 
@@ -197,14 +210,17 @@
       </div>
 
       <button class="btn primary" onclick="registerTab()">＋ 登録する（席を開く）</button>
-      <p class="hint">登録すると下の「今飲んでいる人たち」に追加され、そのまま編集が開きます。飲み物はそこで追加します。</p>
+      <div id="regMsg" class="hint" style="text-align:center; min-height:18px; margin-top:8px;"></div>
+      <p class="hint">登録したお客様は「会計」タブに並びます。飲み物の追加や会計はそちらで行います。</p>
     </div>
+  </section>
 
+  <!-- ===== 会計（席） ===== -->
+  <section id="tab-kaikei">
     <div class="card">
       <h2>今飲んでいる人たち <span id="openCount" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
       <div id="openList"></div>
     </div>
-
     <div class="card">
       <h2>本日 会計済み <span id="closedCount" style="margin-left:auto;color:var(--muted);font-weight:400;"></span></h2>
       <div id="closedList"></div>
@@ -239,19 +255,6 @@
     </div>
   </section>
 
-  <!-- ===== 現金集計 ===== -->
-  <section id="tab-cash">
-    <div class="card">
-      <h2>現金の枚数を数える</h2>
-      <div id="cashList"></div>
-      <div class="total-bar" style="margin-top:12px;">
-        <span class="t">現金合計（実際にある金額）</span>
-        <span class="v" id="cashTotal">¥0</span>
-      </div>
-      <button class="btn ghost" onclick="resetCash()">枚数をすべて0に戻す</button>
-    </div>
-  </section>
-
   <!-- ===== 経費 ===== -->
   <section id="tab-expense">
     <div class="card">
@@ -269,27 +272,60 @@
     </div>
   </section>
 
+  <!-- ===== 現金集計 ===== -->
+  <section id="tab-cash">
+    <div class="card">
+      <h2>スタート金（つり銭）</h2>
+      <span class="label">営業を始めた時にあった現金</span>
+      <input type="number" id="startCashInput" inputmode="numeric" onchange="setStartCash(this.value)">
+    </div>
+    <div class="card">
+      <h2>現金の枚数を数える（現在の残金）</h2>
+      <div id="cashList"></div>
+      <div class="total-bar" style="margin-top:12px;">
+        <span class="t">現在の残金（実際にある金額）</span>
+        <span class="v" id="cashTotal">¥0</span>
+      </div>
+      <button class="btn ghost" onclick="resetCash()">枚数をすべて0に戻す</button>
+    </div>
+  </section>
+
   <!-- ===== 集計 ===== -->
   <section id="tab-summary">
     <div class="card">
-      <h2>本日の集計</h2>
+      <h2>売上まとめ</h2>
       <div id="summary"></div>
+    </div>
+    <div class="card">
+      <h2>現金チェック（ズレ確認）</h2>
+      <div id="cashCheck"></div>
+    </div>
+    <div class="card">
+      <h2>締め・次回のスタート金</h2>
+      <div id="nextStart"></div>
+    </div>
+    <div class="card">
+      <h2>客一覧（明細）</h2>
+      <div id="custDetail"></div>
+      <button class="btn ghost" onclick="exportImage()">🖼 客一覧を画像で保存・共有</button>
+      <button class="btn ghost" onclick="copyDetail()">📋 客一覧をコピー</button>
     </div>
     <div class="card">
       <h2>1日の締め</h2>
       <button class="btn ghost" onclick="copySummary()">📋 集計をコピー</button>
       <button class="btn danger" onclick="closeDay()">営業終了・データをリセット</button>
-      <p class="hint">「営業終了」を押すと本日の席・経費・現金がリセットされます（ドリンク・割りもの登録と料金設定は残ります）。リセット前に集計のコピーをおすすめします。</p>
+      <p class="hint">「営業終了」を押すと本日の席・経費・現金の枚数がリセットされます（スタート金・ドリンク登録・料金設定は残ります）。リセット前に客一覧の保存をおすすめします。</p>
     </div>
   </section>
 
 </div>
 
 <nav>
-  <button class="active" data-tab="kaikei" onclick="switchTab('kaikei',this)"><span class="ic">🧾</span>会計</button>
+  <button class="active" data-tab="register" onclick="switchTab('register',this)"><span class="ic">📝</span>登録</button>
+  <button data-tab="kaikei" onclick="switchTab('kaikei',this)"><span class="ic">🧾</span>会計</button>
   <button data-tab="drinks" onclick="switchTab('drinks',this)"><span class="ic">🍶</span>ドリンク</button>
-  <button data-tab="cash" onclick="switchTab('cash',this)"><span class="ic">💴</span>現金</button>
   <button data-tab="expense" onclick="switchTab('expense',this)"><span class="ic">📤</span>経費</button>
+  <button data-tab="cash" onclick="switchTab('cash',this)"><span class="ic">💴</span>現金</button>
   <button data-tab="summary" onclick="switchTab('summary',this)"><span class="ic">📊</span>集計</button>
 </nav>
 
@@ -312,6 +348,7 @@ const BIG_COUNTRIES = [
   {name:'日本',          flag:'🇯🇵'},
 ];
 const DENOMS = [10000,5000,1000,500,100,50,10,5,1];
+const SALARY_RATE = 0.3;
 
 function today(){
   const d = new Date();
@@ -331,8 +368,9 @@ function defaultState(){
     drinks: DEFAULT_DRINKS.map(d=>({...d})),
     mixers: DEFAULT_MIXERS.map(m=>({...m})),
     chargeAmount: 1000,
+    startCash: 0,
     seqCounter: 0,
-    customers: [],   // 席（open/closed）
+    customers: [],
     expenses: [],
     cash,
   };
@@ -345,7 +383,7 @@ function load(){
     const st = Object.assign(def, s, {cash: Object.assign(def.cash, s.cash||{})});
     if(!Array.isArray(st.mixers) || st.mixers.length===0) st.mixers = DEFAULT_MIXERS.map(m=>({...m}));
     if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')) st.drinks.push({id:'d_rum', name:'ラム', price:800});
-    // 席データの移行（旧バージョン互換）
+    if(typeof st.startCash!=='number') st.startCash = 0;
     st.customers = (st.customers||[]).map(c=>({
       id: c.id,
       seq: c.seq||0,
@@ -374,6 +412,7 @@ function switchTab(name, btn){
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  if(name==='kaikei') renderTabs();
   if(name==='summary') renderSummary();
   if(name==='cash') renderCash();
   if(name==='expense') renderExpenses();
@@ -420,20 +459,18 @@ function renderRegCharge(){
 function registerTab(){
   state.seqCounter = (state.seqCounter||0)+1;
   const id = Date.now();
+  const nm = (reg.name||'').trim();
   state.customers.push({
     id, seq: state.seqCounter, status:'open',
-    name: (reg.name||'').trim(),
-    country: reg.country || '不明',
-    people: reg.people,
-    chargeOn: reg.chargeOn,
-    tip: reg.tip||0,
+    name: nm, country: reg.country || '不明',
+    people: reg.people, chargeOn: reg.chargeOn, tip: reg.tip||0,
     items: [], openedAt:id, closedAt:null,
   });
-  expandedId = id;
   save();
+  const msg = document.getElementById('regMsg');
+  msg.textContent = `✓ ${nm||'お客様'}（${reg.country||'不明'}/${reg.people}名）を登録しました`;
   resetReg();
   renderTabs();
-  document.getElementById('openList').scrollIntoView({behavior:'smooth', block:'start'});
 }
 function resetReg(){
   reg = { name:'', tip:0, country:'', people:1, chargeOn:true };
@@ -450,8 +487,8 @@ function findTab(id){ return state.customers.find(c=>c.id===id); }
 function itemTotal(i){ return i.price*i.qty; }
 function tabItemsTotal(c){ return c.items.reduce((s,i)=>s+itemTotal(i),0); }
 function tabCharge(c){ return c.chargeOn ? state.chargeAmount*c.people : 0; }
-function tabSales(c){ return tabCharge(c)+tabItemsTotal(c); }            // 売上（チャージ+飲物）
-function tabTotal(c){ return tabSales(c)+(c.tip||0); }                   // お客様の支払額（チップ込み）
+function tabSales(c){ return tabCharge(c)+tabItemsTotal(c); }
+function tabTotal(c){ return tabSales(c)+(c.tip||0); }
 function itemsSummary(c){
   return c.items.map(i=>`${i.name}${i.kind==='mixer'?'(割)':''}×${i.qty}`).join('、') || '注文なし';
 }
@@ -488,7 +525,6 @@ function buildCompact(c){
       </div>
     </div>`);
 }
-
 function buildEditor(c){
   const drinkBtns = state.drinks.map(d=>
     `<button class="drink-btn" onclick="addTabItem(${c.id},'drink','${d.id}')"><div class="n">${escapeHtml(d.name)}</div><div class="p">${yen(d.price)}</div></button>`).join('') || '<p class="hint">ドリンク未登録</p>';
@@ -497,7 +533,6 @@ function buildEditor(c){
   const rows = c.items.map((i,idx)=>
     `<div class="item-row"><div style="flex:1;"><div class="name">${escapeHtml(i.name)}${i.kind==='mixer'?'<span class="tag">割</span>':''}</div><div class="sub">${yen(i.price)} × ${i.qty} ＝ ${yen(itemTotal(i))}</div></div>
      <div class="mini-step"><button onclick="changeTabQty(${c.id},${idx},-1)">−</button><span class="v">${i.qty}</span><button onclick="changeTabQty(${c.id},${idx},1)">＋</button></div></div>`).join('') || '<div class="empty">注文を追加してください</div>';
-
   return elFrom(`
     <div class="tab editing">
       <div class="top">
@@ -528,7 +563,6 @@ function buildEditor(c){
       </div>
     </div>`);
 }
-
 function buildClosed(c){
   const name = c.name ? escapeHtml(c.name) : 'お客様';
   return elFrom(`
@@ -557,8 +591,7 @@ function addTabItem(id, kind, refId){
   const list = kind==='mixer' ? state.mixers : state.drinks;
   const src = list.find(x=>x.id===refId); if(!src)return;
   const ex = c.items.find(i=>i.refId===refId && i.kind===kind);
-  if(ex) ex.qty++;
-  else c.items.push({refId, name:src.name, price:src.price, qty:1, kind});
+  if(ex) ex.qty++; else c.items.push({refId, name:src.name, price:src.price, qty:1, kind});
   save(); renderTabs();
 }
 function changeTabQty(id, idx, d){
@@ -627,8 +660,10 @@ function addMixer(){
 }
 function setChargeAmt(v){ state.chargeAmount=Math.max(0,parseInt(v)||0); save(); renderRegCharge(); }
 
-/* ---------- 現金 ---------- */
+/* ---------- 現金・スタート金 ---------- */
+function setStartCash(v){ state.startCash=Math.max(0,parseInt(v)||0); save(); }
 function renderCash(){
+  document.getElementById('startCashInput').value = state.startCash;
   const wrap=document.getElementById('cashList'); wrap.innerHTML='';
   DENOMS.forEach(d=>{
     const cnt=state.cash[d]||0;
@@ -667,54 +702,154 @@ function salesTotal(){ return state.customers.reduce((s,c)=>s+tabSales(c),0); }
 function chargeTotal(){ return state.customers.reduce((s,c)=>s+tabCharge(c),0); }
 function tipTotal(){ return state.customers.reduce((s,c)=>s+(c.tip||0),0); }
 function drinkSales(){ return salesTotal()-chargeTotal(); }
+function salaryAmount(){ return Math.round(salesTotal()*SALARY_RATE); }
+function nextStartCash(){ return state.startCash + salesTotal() - salaryAmount() - expenseTotal(); }
+function cashDerivedSales(){ return cashTotal() - state.startCash + expenseTotal(); }
+function cashGap(){ return cashDerivedSales() - salesTotal(); }
 function countryBreakdown(){
   const m={};
   state.customers.forEach(c=>{ m[c.country]=(m[c.country]||0)+c.people; });
   return Object.entries(m).sort((a,b)=>b[1]-a[1]);
 }
 function renderSummary(){
-  const sales=salesTotal(), exp=expenseTotal(), cash=cashTotal(), tip=tipTotal();
+  const sales=salesTotal(), tip=tipTotal();
   const opens=state.customers.filter(c=>c.status==='open');
   const groups=state.customers.length;
   const people=state.customers.reduce((s,c)=>s+c.people,0);
-  const net=sales-exp;
   const cb=countryBreakdown();
   const csHtml = cb.length? cb.map(([k,v])=>`<span class="cs">${escapeHtml(k)} <b>${v}名</b></span>`).join('') : '<span class="hint">データなし</span>';
   document.getElementById('summary').innerHTML = `
-    <div class="sum-big"><span class="t">本日の売上</span><span class="v">${yen(sales)}</span></div>
+    <div class="sum-big"><span class="t">本日の売上（伝票）</span><span class="v">${yen(sales)}</span></div>
     <div class="sum-line"><span>来客数</span><span class="v">${groups}組 / ${people}名</span></div>
     <div class="sum-line"><span>うち滞在中</span><span class="v">${opens.length}組</span></div>
     <div class="sum-line"><span>チャージ合計</span><span class="v">${yen(chargeTotal())}</span></div>
     <div class="sum-line"><span>ドリンク・割りもの売上</span><span class="v">${yen(drinkSales())}</span></div>
     <div class="sum-line"><span>チップ合計</span><span class="v">${yen(tip)}</span></div>
-    <div class="sum-line"><span>経費合計</span><span class="v neg">−${yen(exp)}</span></div>
-    <div class="sum-line"><span>売上 − 経費</span><span class="v ${net>=0?'pos':'neg'}">${yen(net)}</span></div>
-    <div class="sum-line"><span>現金実数（数えた金額）</span><span class="v">${yen(cash)}</span></div>
     <div style="margin-top:14px;"><span class="label">国別の人数</span><div class="country-stat">${csHtml}</div></div>
   `;
+
+  const gap=cashGap();
+  let chk;
+  if(gap===0) chk = `<div class="chk ok">✓ 現金と伝票が一致しています</div>`;
+  else if(gap>0) chk = `<div class="chk ng">現金が ${yen(gap)} 多い（受取超過・釣り銭不足など）</div>`;
+  else chk = `<div class="chk ng">現金が ${yen(-gap)} 不足（渡しすぎ・記録漏れなど）</div>`;
+  document.getElementById('cashCheck').innerHTML = `
+    <div class="sum-line"><span>現在の残金（数えた現金）</span><span class="v">${yen(cashTotal())}</span></div>
+    <div class="sum-line minus"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
+    <div class="sum-line plus"><span>経費</span><span class="v">${yen(expenseTotal())}</span></div>
+    <div class="sum-line"><span>＝ 現金から見た売上</span><span class="v">${yen(cashDerivedSales())}</span></div>
+    <div class="sum-line minus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
+    ${chk}
+    <p class="hint">現金集計 − スタート金 + 経費 が、伝票の売上と合うか確認できます。</p>
+  `;
+
+  document.getElementById('nextStart').innerHTML = `
+    <div class="sum-line"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
+    <div class="sum-line plus"><span>本日の売上（伝票）</span><span class="v">${yen(sales)}</span></div>
+    <div class="sum-line minus"><span>給料（売上×30%）</span><span class="v">${yen(salaryAmount())}</span></div>
+    <div class="sum-line minus"><span>経費</span><span class="v">${yen(expenseTotal())}</span></div>
+    <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStartCash())}</span></div>
+  `;
+
+  renderCustDetail();
+}
+function renderCustDetail(){
+  const wrap=document.getElementById('custDetail'); wrap.innerHTML='';
+  if(state.customers.length===0){ wrap.innerHTML='<div class="empty">まだ記録がありません</div>'; return; }
+  state.customers.forEach(c=>{
+    wrap.appendChild(elFrom(`<div class="list-row">
+      <div class="h"><span>${c.seq}. ${escapeHtml(c.name||'お客様')}（${escapeHtml(c.country)}/${c.people}名）${c.status==='open'?'<span class="open"> ※滞在中</span>':''}</span><span>${yen(tabTotal(c))}</span></div>
+      <div class="d">${c.chargeOn?`チャージ${yen(tabCharge(c))}・`:''}${escapeHtml(itemsSummary(c))}${c.tip?`・チップ${yen(c.tip)}`:''}</div>
+    </div>`));
+  });
+}
+
+/* ---------- 書き出し ---------- */
+function copyText(t){
+  if(navigator.clipboard){ navigator.clipboard.writeText(t).then(()=>alert('コピーしました')).catch(()=>prompt('コピーしてください',t)); }
+  else prompt('コピーしてください',t);
 }
 function summaryText(){
   const cb=countryBreakdown().map(([k,v])=>`  ${k}: ${v}名`).join('\n');
   return [
     `【${jpDate()} 営業集計】`,
-    `本日の売上: ${yen(salesTotal())}`,
+    `本日の売上(伝票): ${yen(salesTotal())}`,
     `来客: ${state.customers.length}組 / ${state.customers.reduce((s,c)=>s+c.people,0)}名`,
     `チャージ合計: ${yen(chargeTotal())}`,
     `ドリンク・割りもの売上: ${yen(drinkSales())}`,
     `チップ合計: ${yen(tipTotal())}`,
     `経費合計: ${yen(expenseTotal())}`,
-    `売上−経費: ${yen(salesTotal()-expenseTotal())}`,
-    `現金実数: ${yen(cashTotal())}`,
+    ``,
+    `スタート金: ${yen(state.startCash)}`,
+    `現在の残金: ${yen(cashTotal())}`,
+    `現金から見た売上: ${yen(cashDerivedSales())}`,
+    `ズレ(現金-伝票): ${yen(cashGap())}`,
+    ``,
+    `給料(売上×30%): ${yen(salaryAmount())}`,
+    `次回のスタート金: ${yen(nextStartCash())}`,
+    ``,
     `国別:\n${cb||'  —'}`,
   ].join('\n');
 }
-function copySummary(){
-  const t=summaryText();
-  if(navigator.clipboard){ navigator.clipboard.writeText(t).then(()=>alert('集計をコピーしました')).catch(()=>prompt('コピーしてください',t)); }
-  else prompt('コピーしてください',t);
+function copySummary(){ copyText(summaryText()); }
+function detailText(){
+  const lines = state.customers.map(c=>
+    `${c.seq}. ${c.name||'お客様'}（${c.country}/${c.people}名）${yen(tabTotal(c))}${c.status==='open'?' ※滞在中':''}\n   ${itemsSummary(c)}${c.tip?`・チップ${yen(c.tip)}`:''}`);
+  return `【${jpDate()} 客一覧】\n本日の売上 ${yen(salesTotal())} / 来客 ${state.customers.length}組 ${state.customers.reduce((s,c)=>s+c.people,0)}名\n\n` + (lines.join('\n')||'記録なし');
 }
+function copyDetail(){ copyText(detailText()); }
+
+function exportImage(){
+  const cs = state.customers;
+  if(cs.length===0){ alert('記録がありません'); return; }
+  const W=700, pad=28, lineH=24;
+  const ctx0 = document.createElement('canvas').getContext('2d');
+  function wrap(text, font, maxW){
+    ctx0.font=font; const words=[...text]; let line='', out=[];
+    for(const ch of words){ if(ctx0.measureText(line+ch).width>maxW && line){ out.push(line); line=ch; } else line+=ch; }
+    if(line) out.push(line); return out;
+  }
+  const blocks = cs.map(c=>{
+    const head = `${c.seq}. ${c.name||'お客様'}（${c.country}/${c.people}名）  ${yen(tabTotal(c))}${c.status==='open'?' ※滞在中':''}`;
+    const sub = `${c.chargeOn?`チャージ${yen(tabCharge(c))}・`:''}${itemsSummary(c)}${c.tip?`・チップ${yen(c.tip)}`:''}`;
+    return { head, subLines: wrap('  '+sub, '15px sans-serif', W-pad*2) };
+  });
+  let H = pad + 40 + 30 + 16;
+  blocks.forEach(b=> H += lineH + b.subLines.length*lineH + 10);
+  H += pad;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const x=cv.getContext('2d');
+  x.fillStyle='#ffffff'; x.fillRect(0,0,W,H);
+  x.textBaseline='top';
+  x.fillStyle='#1a1410'; x.font='bold 26px sans-serif';
+  x.fillText(`${jpDate()} 客一覧`, pad, pad);
+  x.fillStyle='#666'; x.font='16px sans-serif';
+  x.fillText(`本日の売上 ${yen(salesTotal())} ／ 来客 ${cs.length}組 ${cs.reduce((s,c)=>s+c.people,0)}名`, pad, pad+34);
+  x.strokeStyle='#ddd'; x.beginPath(); x.moveTo(pad,pad+64); x.lineTo(W-pad,pad+64); x.stroke();
+  let y = pad+78;
+  blocks.forEach(b=>{
+    x.fillStyle='#1a1410'; x.font='bold 18px sans-serif';
+    x.fillText(b.head, pad, y); y+=lineH;
+    x.fillStyle='#666'; x.font='15px sans-serif';
+    b.subLines.forEach(l=>{ x.fillText(l, pad, y); y+=lineH; });
+    y+=10;
+  });
+  cv.toBlob(b=>{
+    if(!b){ alert('画像の生成に失敗しました'); return; }
+    const fname=`客一覧_${state.date}.png`;
+    const file=new File([b], fname, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:'客一覧', text:`${jpDate()} 客一覧`}).catch(()=>{});
+    } else {
+      const url=URL.createObjectURL(b);
+      const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    }
+  }, 'image/png');
+}
+
 function closeDay(){
-  if(!confirm('営業を終了して本日のデータをリセットしますか？\n（ドリンク・割りもの登録と料金設定は残ります）')) return;
+  if(!confirm('営業を終了して本日のデータをリセットしますか？\n（スタート金・ドリンク登録・料金設定は残ります）')) return;
   state.customers=[]; state.expenses=[]; state.seqCounter=0; expandedId=null;
   DENOMS.forEach(d=>state.cash[d]=0);
   state.date=today();
