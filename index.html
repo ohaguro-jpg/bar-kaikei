@@ -51,6 +51,14 @@
   input:focus{border-color:var(--accent);}
   .field-row{display:flex; gap:8px; align-items:flex-end;}
 
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+  .chip{display:inline-flex; align-items:center; background:var(--card2); border:1px solid var(--line); border-radius:20px; overflow:hidden;}
+  .chip button{background:none; border:none; color:var(--text); font-size:15px;}
+  .chip button.sel{padding:9px 6px 9px 14px;}
+  .chip button.rm{padding:9px 12px 9px 6px; color:var(--muted); font-size:15px;}
+  .chip.on{background:var(--accent); border-color:var(--accent);}
+  .chip.on button{color:#241a0e; font-weight:700;}
+
   .country-big{display:flex; flex-direction:column; gap:9px; margin-bottom:12px;}
   .cbtn{display:flex; align-items:center; gap:12px; padding:15px 16px; font-size:17px; font-weight:700;
     background:var(--card2); border:1px solid var(--line); border-radius:13px; color:var(--text);}
@@ -173,6 +181,16 @@
 
   <!-- ===== 登録 ===== -->
   <section id="tab-register" class="active">
+    <div class="card">
+      <h2>担当（あなたの名前）</h2>
+      <div class="chips" id="staffChips"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="staffInput" placeholder="名前を入力（例：ゆうじ）" autocomplete="off" style="flex:1;">
+        <button class="btn primary sm" style="width:96px;" onclick="addStaff()">担当にする</button>
+      </div>
+      <div id="currentStaffMsg" class="hint" style="margin-top:8px;"></div>
+    </div>
+
     <div class="card">
       <h2>お客様の登録</h2>
 
@@ -299,6 +317,10 @@
       <div id="summary"></div>
     </div>
     <div class="card">
+      <h2>スタッフ別の売上（誰がいくら）</h2>
+      <div id="staffSummary"></div>
+    </div>
+    <div class="card">
       <h2>現金チェック（ズレ確認）</h2>
       <div id="cashCheck"></div>
     </div>
@@ -372,6 +394,8 @@ function defaultState(){
     chargeAmount: 1000,
     startCash: 0,
     seqCounter: 0,
+    currentStaff: '',
+    staffNames: [],
     customers: [],
     expenses: [],
     cash,
@@ -386,12 +410,15 @@ function load(){
     if(!Array.isArray(st.mixers) || st.mixers.length===0) st.mixers = DEFAULT_MIXERS.map(m=>({...m}));
     if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')) st.drinks.push({id:'d_rum', name:'ラム', price:800});
     if(typeof st.startCash!=='number') st.startCash = 0;
+    if(typeof st.currentStaff!=='string') st.currentStaff = '';
+    if(!Array.isArray(st.staffNames)) st.staffNames = [];
     st.customers = (st.customers||[]).map(c=>({
       id: c.id,
       seq: c.seq||0,
       status: c.status || 'closed',
       name: c.name!==undefined ? c.name : (c.guestName||''),
       country: c.country || '不明',
+      staff: c.staff || '',
       people: c.people||1,
       chargeOn: c.chargeOn!==undefined ? c.chargeOn : ((c.charge||0)>0),
       tip: c.tip||0,
@@ -458,13 +485,51 @@ function renderRegCharge(){
   document.getElementById('regChargeSub').textContent =
     `${yen(state.chargeAmount)} × ${reg.people}名 = ${yen(state.chargeAmount*reg.people)}`;
 }
+/* ---------- 担当スタッフ ---------- */
+function renderStaff(){
+  const wrap=document.getElementById('staffChips'); wrap.innerHTML='';
+  if(state.staffNames.length===0){
+    wrap.innerHTML='<span class="hint">まだ担当が登録されていません。名前を入力してください。</span>';
+  }
+  state.staffNames.forEach((n,idx)=>{
+    const on = n===state.currentStaff;
+    wrap.appendChild(elFrom(`<span class="chip ${on?'on':''}"><button class="sel" onclick="setStaffByIdx(${idx})">${escapeHtml(n)}</button><button class="rm" onclick="removeStaffByIdx(${idx})">×</button></span>`));
+  });
+  const msg=document.getElementById('currentStaffMsg');
+  msg.textContent = state.currentStaff
+    ? `現在の担当：${state.currentStaff}（これから登録するお客様はこの人の売上になります）`
+    : '担当が未選択です。お客様の売上は「担当なし」になります。';
+}
+function setStaff(name){
+  name=(name||'').trim();
+  state.currentStaff = name;
+  if(name && !state.staffNames.includes(name)) state.staffNames.push(name);
+  save(); renderStaff();
+}
+function setStaffByIdx(i){ setStaff(state.staffNames[i]); }
+function addStaff(){
+  const el=document.getElementById('staffInput');
+  const v=el.value.trim();
+  if(!v){ alert('名前を入力してください'); return; }
+  setStaff(v); el.value='';
+}
+function removeStaffByIdx(i){
+  const n=state.staffNames[i];
+  if(!confirm(`担当リストから「${n}」を消しますか？（過去の売上の記録は残ります）`)) return;
+  state.staffNames.splice(i,1);
+  if(state.currentStaff===n) state.currentStaff='';
+  save(); renderStaff();
+}
+
+function uniqueId(arr){ let id=Date.now(); while(arr.some(x=>x.id===id)) id++; return id; }
 function registerTab(){
   state.seqCounter = (state.seqCounter||0)+1;
-  const id = Date.now();
+  const id = uniqueId(state.customers);
   const nm = (reg.name||'').trim();
   state.customers.push({
     id, seq: state.seqCounter, status:'open',
     name: nm, country: reg.country || '不明',
+    staff: state.currentStaff || '',
     people: reg.people, chargeOn: reg.chargeOn, tip: reg.tip||0,
     items: [], openedAt:id, closedAt:null,
   });
@@ -522,7 +587,7 @@ function buildCompact(c){
     <div class="tab">
       <div class="top">
         <div><div class="who"><span class="seq">${c.seq}</span>${name}</div>
-        <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
+        <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.staff?` ／ 担当 ${escapeHtml(c.staff)}`:''}${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
         <div class="amt">${yen(tabTotal(c))}</div>
       </div>
       ${ordered}
@@ -576,7 +641,7 @@ function buildClosed(c){
     <div class="tab">
       <div class="top">
         <div><div class="who"><span class="seq">${c.seq}</span>${name}</div>
-        <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
+        <div class="meta">${escapeHtml(c.country)} ／ ${c.people}名${c.staff?` ／ 担当 ${escapeHtml(c.staff)}`:''}${c.tip?` ／ チップ${yen(c.tip)}`:''}</div></div>
         <div class="amt">${yen(tabTotal(c))}</div>
       </div>
       <div class="drinks">${c.chargeOn?`チャージ ${yen(tabCharge(c))}　`:''}${escapeHtml(itemsSummary(c))}</div>
@@ -653,7 +718,7 @@ function addDrink(){
   const name=document.getElementById('newDrinkName').value.trim();
   const price=parseInt(document.getElementById('newDrinkPrice').value)||0;
   if(!name){ alert('お酒の名前を入力してください'); return; }
-  state.drinks.push({id:'d'+Date.now(), name, price});
+  state.drinks.push({id:'d'+Date.now()+Math.floor(Math.random()*1000), name, price});
   document.getElementById('newDrinkName').value=''; document.getElementById('newDrinkPrice').value='';
   save(); renderDrinkMaster();
 }
@@ -661,7 +726,7 @@ function addMixer(){
   const name=document.getElementById('newMixName').value.trim();
   const price=parseInt(document.getElementById('newMixPrice').value)||0;
   if(!name){ alert('割りものの名前を入力してください'); return; }
-  state.mixers.push({id:'m'+Date.now(), name, price});
+  state.mixers.push({id:'m'+Date.now()+Math.floor(Math.random()*1000), name, price});
   document.getElementById('newMixName').value=''; document.getElementById('newMixPrice').value='100';
   save(); renderMixerMaster();
 }
@@ -698,7 +763,7 @@ function addExpense(){
   const label=document.getElementById('expLabel').value.trim()||'経費';
   const amount=parseInt(document.getElementById('expAmount').value)||0;
   if(amount<=0){ alert('金額を入力してください'); return; }
-  state.expenses.push({id:Date.now(), label, amount});
+  state.expenses.push({id:uniqueId(state.expenses), label, amount});
   document.getElementById('expLabel').value=''; document.getElementById('expAmount').value='';
   save(); renderExpenses();
 }
@@ -717,6 +782,25 @@ function countryBreakdown(){
   const m={};
   state.customers.forEach(c=>{ m[c.country]=(m[c.country]||0)+c.people; });
   return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function staffBreakdown(){
+  const m={};
+  state.customers.forEach(c=>{
+    const k=c.staff||'';
+    if(!m[k]) m[k]={sales:0, groups:0, people:0};
+    m[k].sales += tabSales(c); m[k].groups++; m[k].people += c.people;
+  });
+  return Object.entries(m).sort((a,b)=>b[1].sales-a[1].sales);
+}
+function renderStaffSummary(){
+  const wrap=document.getElementById('staffSummary');
+  const sb=staffBreakdown();
+  if(sb.length===0){ wrap.innerHTML='<div class="empty">データなし</div>'; return; }
+  wrap.innerHTML = sb.map(([k,v])=>`
+    <div class="sum-line">
+      <span>${k?escapeHtml(k):'担当なし'}<br><span style="font-size:12px;color:var(--muted);">${v.groups}組 / ${v.people}名 ・ 給料 ${yen(Math.round(v.sales*SALARY_RATE))}</span></span>
+      <span class="v">${yen(v.sales)}</span>
+    </div>`).join('');
 }
 function renderSummary(){
   const sales=salesTotal(), tip=tipTotal();
@@ -758,6 +842,7 @@ function renderSummary(){
     <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStartCash())}</span></div>
   `;
 
+  renderStaffSummary();
   renderCustDetail();
 }
 function renderCustDetail(){
@@ -766,7 +851,7 @@ function renderCustDetail(){
   state.customers.forEach(c=>{
     wrap.appendChild(elFrom(`<div class="list-row">
       <div class="h"><span>${c.seq}. ${escapeHtml(c.name||'お客様')}（${escapeHtml(c.country)}/${c.people}名）${c.status==='open'?'<span class="open"> ※滞在中</span>':''}</span><span>${yen(tabTotal(c))}</span></div>
-      <div class="d">${c.chargeOn?`チャージ${yen(tabCharge(c))}・`:''}${escapeHtml(itemsSummary(c))}${c.tip?`・チップ${yen(c.tip)}`:''}</div>
+      <div class="d">${c.staff?`担当:${escapeHtml(c.staff)}・`:''}${c.chargeOn?`チャージ${yen(tabCharge(c))}・`:''}${escapeHtml(itemsSummary(c))}${c.tip?`・チップ${yen(c.tip)}`:''}</div>
     </div>`));
   });
 }
@@ -778,6 +863,7 @@ function copyText(t){
 }
 function summaryText(){
   const cb=countryBreakdown().map(([k,v])=>`  ${k}: ${v}名`).join('\n');
+  const sb=staffBreakdown().map(([k,v])=>`  ${k||'担当なし'}: ${yen(v.sales)}（給料 ${yen(Math.round(v.sales*SALARY_RATE))}）`).join('\n');
   return [
     `【${jpDate()} 営業集計】`,
     `本日の売上(伝票): ${yen(salesTotal())}`,
@@ -786,6 +872,8 @@ function summaryText(){
     `ドリンク・割りもの売上: ${yen(drinkSales())}`,
     `チップ合計: ${yen(tipTotal())}`,
     `経費合計: ${yen(expenseTotal())}`,
+    ``,
+    `スタッフ別売上:\n${sb||'  —'}`,
     ``,
     `スタート金: ${yen(state.startCash)}`,
     `現在の残金: ${yen(cashTotal())}`,
@@ -801,7 +889,7 @@ function summaryText(){
 function copySummary(){ copyText(summaryText()); }
 function detailText(){
   const lines = state.customers.map(c=>
-    `${c.seq}. ${c.name||'お客様'}（${c.country}/${c.people}名）${yen(tabTotal(c))}${c.status==='open'?' ※滞在中':''}\n   ${itemsSummary(c)}${c.tip?`・チップ${yen(c.tip)}`:''}`);
+    `${c.seq}. ${c.name||'お客様'}（${c.country}/${c.people}名）${yen(tabTotal(c))}${c.status==='open'?' ※滞在中':''}\n   ${c.staff?`担当:${c.staff}・`:''}${itemsSummary(c)}${c.tip?`・チップ${yen(c.tip)}`:''}`);
   return `【${jpDate()} 客一覧】\n本日の売上 ${yen(salesTotal())} / 来客 ${state.customers.length}組 ${state.customers.reduce((s,c)=>s+c.people,0)}名\n\n` + (lines.join('\n')||'記録なし');
 }
 function copyDetail(){ copyText(detailText()); }
@@ -818,7 +906,7 @@ function exportImage(){
   }
   const blocks = cs.map(c=>{
     const head = `${c.seq}. ${c.name||'お客様'}（${c.country}/${c.people}名）  ${yen(tabTotal(c))}${c.status==='open'?' ※滞在中':''}`;
-    const sub = `${c.chargeOn?`チャージ${yen(tabCharge(c))}・`:''}${itemsSummary(c)}${c.tip?`・チップ${yen(c.tip)}`:''}`;
+    const sub = `${c.staff?`担当:${c.staff}・`:''}${c.chargeOn?`チャージ${yen(tabCharge(c))}・`:''}${itemsSummary(c)}${c.tip?`・チップ${yen(c.tip)}`:''}`;
     return { head, subLines: wrap('  '+sub, '15px sans-serif', W-pad*2) };
   });
   let H = pad + 40 + 30 + 16;
@@ -858,6 +946,7 @@ function exportImage(){
 function closeDay(){
   if(!confirm('営業を終了して本日のデータをリセットしますか？\n（スタート金・ドリンク登録・料金設定は残ります）')) return;
   state.customers=[]; state.expenses=[]; state.seqCounter=0; expandedId=null;
+  state.startCash=0;
   DENOMS.forEach(d=>state.cash[d]=0);
   state.date=today();
   save();
@@ -873,6 +962,7 @@ function escapeAttr(s){ return escapeHtml(s).replace(/'/g,'&#39;'); }
 /* ---------- 初期化 ---------- */
 function init(){
   document.getElementById('todayLabel').textContent = jpDate();
+  renderStaff();
   renderCountryButtons();
   renderRegCharge();
   renderTabs();
