@@ -344,11 +344,32 @@
     <div class="card">
       <h2>1日の締め</h2>
       <button class="btn ghost" onclick="copySummary()">📋 集計をコピー</button>
-      <button class="btn danger" onclick="closeDay()">営業終了・データをリセット</button>
-      <p class="hint">「営業終了」を押すと本日の席・経費・現金の枚数がリセットされます（スタート金・ドリンク登録・料金設定は残ります）。リセット前に客一覧の保存をおすすめします。</p>
+      <button class="btn danger" onclick="closeDay()">🔒 集計終了・営業終了</button>
+      <p class="hint">「集計終了」を押すと残金の確認画面が開きます。金額が合ったら営業終了・リセットできます。</p>
+    </div>
+    <div class="card">
+      <h2>📅 過去7日の記録</h2>
+      <div id="historyList"></div>
     </div>
   </section>
 
+</div>
+
+<div id="closeModal" class="startup">
+  <div class="startup-card">
+    <h2>🔒 集計終了</h2>
+    <p class="hint" style="text-align:center;">給料などを取ったあとの残金を数えてください</p>
+    <div class="sum-big" style="margin:18px 0 12px;">
+      <span class="t">次回のスタート金（目安）</span>
+      <span class="v" id="cmNextStart">¥0</span>
+    </div>
+    <span class="label">今の残金（実際に数えた金額）</span>
+    <input type="number" id="cmCash" inputmode="numeric" placeholder="例：30000" oninput="checkCloseAmount()">
+    <div id="cmCheck" style="min-height:48px; margin-top:8px;"></div>
+    <button class="btn primary" onclick="confirmCloseDay()" style="margin-top:4px;">✅ 営業終了・データをリセット</button>
+    <button class="btn ghost" onclick="exportImage()" style="margin-top:8px;">📸 客一覧を画像で保存</button>
+    <button class="btn outline" onclick="closeCloseModal()" style="margin-top:8px;">← 戻る</button>
+  </div>
 </div>
 
 <nav>
@@ -378,7 +399,9 @@ const BIG_COUNTRIES = [
   {name:'オーストラリア', flag:'🇦🇺'},
   {name:'日本',          flag:'🇯🇵'},
 ];
-const DENOMS = [10000,5000,1000,500,100,50,10,5,1];
+const DENOMS = [10000,5000,1000];
+const HISTORY_KEY = 'bar_kaikei_history';
+const HISTORY_DAYS = 7;
 const SALARY_RATE = 0.3;
 
 function today(){
@@ -393,7 +416,7 @@ function jpDate(){
 function yen(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
 
 function defaultState(){
-  const cash={}; DENOMS.forEach(d=>cash[d]=0);
+  const cash={coins:0}; DENOMS.forEach(d=>cash[d]=0);
   return {
     date: today(),
     drinks: DEFAULT_DRINKS.map(d=>({...d})),
@@ -414,6 +437,7 @@ function load(){
     if(!s) return defaultState();
     const def = defaultState();
     const st = Object.assign(def, s, {cash: Object.assign(def.cash, s.cash||{})});
+    if(!('coins' in (s.cash||{}))){ st.cash.coins=[500,100,50,10,5,1].reduce((a,d)=>a+(st.cash[d]||0)*d,0); }
     if(!Array.isArray(st.mixers) || st.mixers.length===0) st.mixers = DEFAULT_MIXERS.map(m=>({...m}));
     if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')) st.drinks.push({id:'d_rum', name:'ラム', price:800});
     if(typeof st.startCash!=='number') st.startCash = 0;
@@ -753,11 +777,17 @@ function renderCash(){
       <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCash(${d},this.value)">
       <span class="x">枚</span><span class="sub">${yen(d*cnt)}</span></div>`));
   });
+  const coins=state.cash.coins||0;
+  wrap.appendChild(elFrom(`<div class="denom-row" style="border-top:2px dashed var(--line); padding-top:12px; margin-top:4px;">
+    <span class="d" style="width:auto;flex:1;font-size:14px;">小銭<br><span style="font-size:11px;color:var(--muted);">500円以下・合計</span></span>
+    <input type="number" inputmode="numeric" min="0" value="${coins}" onchange="setCoins(this.value)" style="width:96px;text-align:right;">
+    <span class="x">円</span></div>`));
   document.getElementById('cashTotal').textContent = yen(cashTotal());
 }
-function cashTotal(){ return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0); }
+function cashTotal(){ return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0)+(state.cash.coins||0); }
 function setCash(d,v){ state.cash[d]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
-function resetCash(){ if(!confirm('枚数をすべて0に戻しますか？'))return; DENOMS.forEach(d=>state.cash[d]=0); save(); renderCash(); }
+function setCoins(v){ state.cash.coins=Math.max(0,parseInt(v)||0); save(); renderCash(); }
+function resetCash(){ if(!confirm('枚数をすべて0に戻しますか？'))return; DENOMS.forEach(d=>state.cash[d]=0); state.cash.coins=0; save(); renderCash(); }
 
 /* ---------- 経費 ---------- */
 function renderExpenses(){
@@ -854,6 +884,7 @@ function renderSummary(){
 
   renderStaffSummary();
   renderCustDetail();
+  renderHistory();
 }
 function renderCustDetail(){
   const wrap=document.getElementById('custDetail'); wrap.innerHTML='';
@@ -953,17 +984,95 @@ function exportImage(){
   }, 'image/png');
 }
 
+/* ---------- 集計終了フロー ---------- */
 function closeDay(){
-  if(!confirm('営業を終了して本日のデータをリセットしますか？\n（スタート金・ドリンク登録・料金設定は残ります）')) return;
+  openCloseModal();
+}
+function openCloseModal(){
+  document.getElementById('cmNextStart').textContent = yen(nextStartCash());
+  document.getElementById('cmCash').value = '';
+  document.getElementById('cmCheck').innerHTML = '';
+  document.getElementById('closeModal').classList.add('show');
+}
+function closeCloseModal(){ document.getElementById('closeModal').classList.remove('show'); }
+function checkCloseAmount(){
+  const entered = parseInt(document.getElementById('cmCash').value)||0;
+  const val = document.getElementById('cmCash').value;
+  if(!val){ document.getElementById('cmCheck').innerHTML=''; return; }
+  const expected = nextStartCash();
+  const diff = entered - expected;
+  let html;
+  if(diff===0) html='<div class="chk ok">✓ 金額が一致しています！</div>';
+  else if(diff>0) html=`<div class="chk ng">¥${diff.toLocaleString()} 多い（確認してください）</div>`;
+  else html=`<div class="chk ng">¥${(-diff).toLocaleString()} 不足（確認してください）</div>`;
+  document.getElementById('cmCheck').innerHTML = html;
+}
+function confirmCloseDay(){
+  if(!confirm('営業を終了してリセットしますか？\n（客一覧の保存は先に「客一覧を画像で保存」から行えます）')) return;
+  saveHistory();
+  closeCloseModal();
   state.customers=[]; state.expenses=[]; state.seqCounter=0; expandedId=null;
   state.startCash=0;
-  DENOMS.forEach(d=>state.cash[d]=0);
+  DENOMS.forEach(d=>state.cash[d]=0); state.cash.coins=0;
   state.date=today();
   save();
   document.getElementById('todayLabel').textContent=jpDate();
   resetReg(); renderStaffBar(); renderTabs(); renderSummary(); renderCash(); renderExpenses();
-  alert('リセットしました。今日もがんばってください！');
   openStartup();
+}
+
+/* ---------- 履歴 ---------- */
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem(HISTORY_KEY))||[]; }catch(e){ return []; }
+}
+function saveHistory(){
+  const record={
+    date: state.date,
+    saved: new Date().toISOString(),
+    staff: state.currentStaff,
+    salesTotal: salesTotal(),
+    expenseTotal: expenseTotal(),
+    startCash: state.startCash,
+    endCash: cashTotal(),
+    salary: salaryAmount(),
+    nextStart: nextStartCash(),
+    groups: state.customers.length,
+    people: state.customers.reduce((s,c)=>s+c.people,0),
+    staffBreakdown: staffBreakdown().map(([k,v])=>({name:k, sales:v.sales, groups:v.groups, people:v.people})),
+    customers: state.customers.map(c=>({
+      seq:c.seq, name:c.name, country:c.country, people:c.people,
+      staff:c.staff, total:tabTotal(c),
+      items: itemsSummary(c), chargeOn:c.chargeOn, tip:c.tip,
+    })),
+  };
+  let history=loadHistory();
+  history.push(record);
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-HISTORY_DAYS);
+  history=history.filter(r=>new Date(r.saved)>=cutoff);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+function renderHistory(){
+  const wrap=document.getElementById('historyList');
+  if(!wrap) return;
+  const history=loadHistory();
+  if(history.length===0){ wrap.innerHTML='<div class="empty">履歴なし（営業終了後に記録されます）</div>'; return; }
+  wrap.innerHTML='';
+  history.slice().reverse().forEach((r,i)=>{
+    const sb=(r.staffBreakdown||[]).filter(s=>s.name).map(s=>`${escapeHtml(s.name)}: ${yen(s.sales)}（給料${yen(Math.round(s.sales*SALARY_RATE))}）`).join(' / ');
+    const custLines=(r.customers||[]).map(c=>`${c.seq}. ${escapeHtml(c.name||'お客様')}（${escapeHtml(c.country)}/${c.people}名）${yen(c.total)}　${escapeHtml(c.items)}`).join('\n');
+    const detailId=`hist-detail-${i}`;
+    wrap.appendChild(elFrom(`<div class="list-row">
+      <div class="h"><span style="color:var(--accent);">${r.date}</span><span style="color:var(--good);">${yen(r.salesTotal||0)}</span></div>
+      <div class="d">${r.groups||0}組 / ${r.people||0}名　次スタート ${yen(r.nextStart||0)}</div>
+      ${sb?`<div class="d" style="margin-top:3px;">${sb}</div>`:''}
+      <button onclick="toggleHistDetail('${detailId}')" style="background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:12px;margin-top:6px;">客一覧を見る ▾</button>
+      <pre id="${detailId}" style="display:none;font-size:12px;color:var(--muted);white-space:pre-wrap;margin-top:6px;line-height:1.6;">${escapeHtml(custLines)}</pre>
+    </div>`));
+  });
+}
+function toggleHistDetail(id){
+  const el=document.getElementById(id); if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
 /* ---------- utils ---------- */
