@@ -214,7 +214,10 @@
 
       <span class="label" style="margin-top:14px;">国名</span>
       <div class="country-big" id="countryButtons"></div>
-      <input type="text" id="otherCountry" placeholder="その他の国を入力（例：タイ）" autocomplete="off">
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <input type="text" id="otherCountry" placeholder="その他・新しい国（例：タイ）" autocomplete="off" style="flex:1;">
+        <button class="btn primary sm" onclick="addCustomCountry()" style="width:80px;margin-top:0;">＋登録</button>
+      </div>
 
       <div style="margin-top:14px;">
         <span class="label">人数</span>
@@ -320,20 +323,24 @@
   <!-- ===== 集計 ===== -->
   <section id="tab-summary">
     <div class="card">
-      <h2>売上まとめ</h2>
+      <h2>① 現金の確認</h2>
+      <div id="cashCheck"></div>
+    </div>
+    <div class="card">
+      <h2>② 差額確認（おつりチェック）</h2>
+      <div id="gapCheck"></div>
+    </div>
+    <div class="card">
+      <h2>③ 次回スタート金の計算</h2>
+      <div id="nextStart"></div>
+    </div>
+    <div class="card">
+      <h2>来客まとめ</h2>
       <div id="summary"></div>
     </div>
     <div class="card">
       <h2>スタッフ別の売上（誰がいくら）</h2>
       <div id="staffSummary"></div>
-    </div>
-    <div class="card">
-      <h2>現金チェック（ズレ確認）</h2>
-      <div id="cashCheck"></div>
-    </div>
-    <div class="card">
-      <h2>締め・次回のスタート金</h2>
-      <div id="nextStart"></div>
     </div>
     <div class="card">
       <h2>客一覧（明細）</h2>
@@ -400,6 +407,7 @@ const BIG_COUNTRIES = [
   {name:'日本',          flag:'🇯🇵'},
 ];
 const DENOMS = [10000,5000,1000];
+const COIN_DENOMS = [500,100,50,10,5,1];
 const HISTORY_KEY = 'bar_kaikei_history';
 const HISTORY_DAYS = 7;
 const SALARY_RATE = 0.3;
@@ -416,7 +424,9 @@ function jpDate(){
 function yen(n){ return '¥'+Math.round(n).toLocaleString('ja-JP'); }
 
 function defaultState(){
-  const cash={coins:0}; DENOMS.forEach(d=>cash[d]=0);
+  const cash={};
+  DENOMS.forEach(d=>cash[d]=0);
+  COIN_DENOMS.forEach(d=>cash['c'+d]=0);
   return {
     date: today(),
     drinks: DEFAULT_DRINKS.map(d=>({...d})),
@@ -426,6 +436,7 @@ function defaultState(){
     seqCounter: 0,
     currentStaff: '',
     staffNames: [],
+    countries: [],
     customers: [],
     expenses: [],
     cash,
@@ -437,7 +448,8 @@ function load(){
     if(!s) return defaultState();
     const def = defaultState();
     const st = Object.assign(def, s, {cash: Object.assign(def.cash, s.cash||{})});
-    if(!('coins' in (s.cash||{}))){ st.cash.coins=[500,100,50,10,5,1].reduce((a,d)=>a+(st.cash[d]||0)*d,0); }
+    COIN_DENOMS.forEach(d=>{ if(st.cash['c'+d]===undefined) st.cash['c'+d]=0; });
+    if(!Array.isArray(st.countries)) st.countries=[];
     if(!Array.isArray(st.mixers) || st.mixers.length===0) st.mixers = DEFAULT_MIXERS.map(m=>({...m}));
     if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')) st.drinks.push({id:'d_rum', name:'ラム', price:800});
     if(typeof st.startCash!=='number') st.startCash = 0;
@@ -485,19 +497,54 @@ function renderCountryButtons(){
   const wrap = document.getElementById('countryButtons');
   wrap.innerHTML = '';
   const otherVal = document.getElementById('otherCountry').value.trim();
-  BIG_COUNTRIES.forEach(c=>{
-    const b = document.createElement('button');
+  const allFixed = BIG_COUNTRIES.map(c=>({...c, fixed:true}))
+    .concat(state.countries.map((c,i)=>({...c, fixed:false, idx:i})));
+  allFixed.forEach(c=>{
     const on = (reg.country===c.name && !otherVal);
-    b.className = 'cbtn' + (on ? ' on':'');
-    b.innerHTML = `<span class="flag">${c.flag}</span>${c.name}`;
-    b.onclick = ()=>selectBigCountry(c.name);
-    wrap.appendChild(b);
+    if(c.fixed){
+      const b = document.createElement('button');
+      b.className = 'cbtn'+(on?' on':'');
+      b.innerHTML = `<span class="flag">${c.flag}</span>${c.name}`;
+      b.onclick = ()=>selectBigCountry(c.name);
+      wrap.appendChild(b);
+    } else {
+      const row = document.createElement('div');
+      row.style='display:flex;gap:2px;';
+      const b = document.createElement('button');
+      b.className = 'cbtn'+(on?' on':'');
+      b.style='flex:1;border-radius:13px 0 0 13px;';
+      b.innerHTML = `<span class="flag">🌏</span>${escapeHtml(c.name)}`;
+      b.onclick = ()=>selectBigCountry(c.name);
+      const rm = document.createElement('button');
+      rm.style='background:var(--card2);border:1px solid var(--bad);color:var(--bad);border-radius:0 13px 13px 0;padding:0 16px;font-size:18px;font-weight:700;';
+      rm.textContent='×';
+      rm.onclick=()=>removeCustomCountry(c.idx);
+      row.appendChild(b); row.appendChild(rm);
+      wrap.appendChild(row);
+    }
   });
 }
 function selectBigCountry(name){
   reg.country = name;
   document.getElementById('otherCountry').value = '';
   renderCountryButtons();
+}
+function addCustomCountry(){
+  const val = document.getElementById('otherCountry').value.trim();
+  if(!val){ alert('国名を入力してください'); return; }
+  const exists = BIG_COUNTRIES.some(c=>c.name===val) || state.countries.some(c=>c.name===val);
+  if(exists){ alert('すでに登録されています'); return; }
+  state.countries.push({name:val, flag:'🌏'});
+  reg.country = val;
+  document.getElementById('otherCountry').value = '';
+  save(); renderCountryButtons();
+}
+function removeCustomCountry(i){
+  const name = state.countries[i]&&state.countries[i].name;
+  if(!confirm(`「${name}」を削除しますか？`)) return;
+  state.countries.splice(i,1);
+  if(reg.country===name) reg.country='';
+  save(); renderCountryButtons();
 }
 document.getElementById('otherCountry').addEventListener('input', e=>{
   const v = e.target.value.trim();
@@ -777,17 +824,27 @@ function renderCash(){
       <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCash(${d},this.value)">
       <span class="x">枚</span><span class="sub">${yen(d*cnt)}</span></div>`));
   });
-  const coins=state.cash.coins||0;
-  wrap.appendChild(elFrom(`<div class="denom-row" style="border-top:2px dashed var(--line); padding-top:12px; margin-top:4px;">
-    <span class="d" style="width:auto;flex:1;font-size:14px;">小銭<br><span style="font-size:11px;color:var(--muted);">500円以下・合計</span></span>
-    <input type="number" inputmode="numeric" min="0" value="${coins}" onchange="setCoins(this.value)" style="width:96px;text-align:right;">
-    <span class="x">円</span></div>`));
+  wrap.appendChild(elFrom(`<div style="padding:8px 0 4px; font-size:12px; color:var(--muted); border-top:1px dashed var(--line); margin-top:4px;">小銭（金額で入力）</div>`));
+  COIN_DENOMS.forEach(d=>{
+    const amt=state.cash['c'+d]||0;
+    wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
+      <input type="number" inputmode="numeric" min="0" value="${amt}" onchange="setCoinAmt('c${d}',this.value)" style="width:96px;text-align:right;">
+      <span class="x">円</span><span class="sub">${yen(amt)}</span></div>`));
+  });
   document.getElementById('cashTotal').textContent = yen(cashTotal());
 }
-function cashTotal(){ return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0)+(state.cash.coins||0); }
+function cashTotal(){
+  return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0)
+       + COIN_DENOMS.reduce((s,d)=>s+(state.cash['c'+d]||0),0);
+}
 function setCash(d,v){ state.cash[d]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
-function setCoins(v){ state.cash.coins=Math.max(0,parseInt(v)||0); save(); renderCash(); }
-function resetCash(){ if(!confirm('枚数をすべて0に戻しますか？'))return; DENOMS.forEach(d=>state.cash[d]=0); state.cash.coins=0; save(); renderCash(); }
+function setCoinAmt(key,v){ state.cash[key]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
+function resetCash(){
+  if(!confirm('金額をすべて0に戻しますか？'))return;
+  DENOMS.forEach(d=>state.cash[d]=0);
+  COIN_DENOMS.forEach(d=>state.cash['c'+d]=0);
+  save(); renderCash();
+}
 
 /* ---------- 経費 ---------- */
 function renderExpenses(){
@@ -847,39 +904,58 @@ function renderSummary(){
   const opens=state.customers.filter(c=>c.status==='open');
   const groups=state.customers.length;
   const people=state.customers.reduce((s,c)=>s+c.people,0);
+  const ctotal=cashTotal();
+  const rawDiff=ctotal-state.startCash;
+  const cashSales=cashDerivedSales();
+  const gap=cashGap();
+  const firstEnd=state.startCash+sales;
+  const salary=salaryAmount();
+  const exp=expenseTotal();
+  const nextStart=nextStartCash();
+
+  /* ① 現金の確認 */
+  document.getElementById('cashCheck').innerHTML=`
+    <div class="sum-line"><span>今のエンド金（残金）</span><span class="v">${yen(ctotal)}</span></div>
+    <div class="sum-line minus"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
+    <div class="sum-line" style="border-top:1px solid var(--accent2);padding-top:10px;"><span>差額</span><span class="v">${yen(rawDiff)}</span></div>
+    <div class="sum-line plus"><span>経費（現金から支払い済み）</span><span class="v">${yen(exp)}</span></div>
+    <div class="sum-big"><span class="t">現金から見た売上</span><span class="v">${yen(cashSales)}</span></div>
+    <p class="hint" style="margin-top:6px;">エンド金 − スタート金 ＋ 経費 ＝ 現金売上</p>
+  `;
+
+  /* ② 差額確認 */
+  let chk;
+  if(gap===0) chk=`<div class="chk ok">✓ 現金と伝票が一致しています（差額 ¥0）</div>`;
+  else if(gap>0) chk=`<div class="chk ng">現金が ${yen(gap)} 多い（おつりを少なめに渡した可能性）</div>`;
+  else chk=`<div class="chk ng">現金が ${yen(-gap)} 不足（おつりを多めに渡した可能性）</div>`;
+  document.getElementById('gapCheck').innerHTML=`
+    <div class="sum-line"><span>現金から見た売上</span><span class="v">${yen(cashSales)}</span></div>
+    <div class="sum-line minus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
+    ${chk}
+    <p class="hint" style="margin-top:6px;">差額が ¥0 なら完璧です。差額があるときはおつりの渡し間違いなどを確認してください。</p>
+  `;
+
+  /* ③ 次回スタート金 */
+  document.getElementById('nextStart').innerHTML=`
+    <div class="sum-line"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
+    <div class="sum-line plus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
+    <div class="sum-big"><span class="t">一次エンド金</span><span class="v">${yen(firstEnd)}</span></div>
+    <div class="sum-line minus" style="margin-top:8px;"><span>給料（売上×30%）</span><span class="v">${yen(salary)}</span></div>
+    <div class="sum-line minus"><span>経費</span><span class="v">${yen(exp)}</span></div>
+    <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStart)}</span></div>
+  `;
+
+  /* 来客まとめ */
   const cb=countryBreakdown();
-  const csHtml = cb.length? cb.map(([k,v])=>`<span class="cs">${escapeHtml(k)} <b>${v}名</b></span>`).join('') : '<span class="hint">データなし</span>';
-  document.getElementById('summary').innerHTML = `
-    <div class="sum-big"><span class="t">本日の売上（伝票）</span><span class="v">${yen(sales)}</span></div>
+  const csHtml=cb.length?cb.map(([k,v])=>`<span class="cs">${escapeHtml(k)} <b>${v}名</b></span>`).join(''):'<span class="hint">データなし</span>';
+  document.getElementById('summary').innerHTML=`
+    <div class="sum-line"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
     <div class="sum-line"><span>来客数</span><span class="v">${groups}組 / ${people}名</span></div>
     <div class="sum-line"><span>うち滞在中</span><span class="v">${opens.length}組</span></div>
     <div class="sum-line"><span>チャージ合計</span><span class="v">${yen(chargeTotal())}</span></div>
     <div class="sum-line"><span>ドリンク・割りもの売上</span><span class="v">${yen(drinkSales())}</span></div>
     <div class="sum-line"><span>チップ合計</span><span class="v">${yen(tip)}</span></div>
     <div style="margin-top:14px;"><span class="label">国別の人数</span><div class="country-stat">${csHtml}</div></div>
-  `;
-
-  const gap=cashGap();
-  let chk;
-  if(gap===0) chk = `<div class="chk ok">✓ 現金と伝票が一致しています</div>`;
-  else if(gap>0) chk = `<div class="chk ng">現金が ${yen(gap)} 多い（受取超過・釣り銭不足など）</div>`;
-  else chk = `<div class="chk ng">現金が ${yen(-gap)} 不足（渡しすぎ・記録漏れなど）</div>`;
-  document.getElementById('cashCheck').innerHTML = `
-    <div class="sum-line"><span>現在の残金（数えた現金）</span><span class="v">${yen(cashTotal())}</span></div>
-    <div class="sum-line minus"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
-    <div class="sum-line plus"><span>経費</span><span class="v">${yen(expenseTotal())}</span></div>
-    <div class="sum-line"><span>＝ 現金から見た売上</span><span class="v">${yen(cashDerivedSales())}</span></div>
-    <div class="sum-line minus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
-    ${chk}
-    <p class="hint">現金集計 − スタート金 + 経費 が、伝票の売上と合うか確認できます。</p>
-  `;
-
-  document.getElementById('nextStart').innerHTML = `
-    <div class="sum-line"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
-    <div class="sum-line plus"><span>本日の売上（伝票）</span><span class="v">${yen(sales)}</span></div>
-    <div class="sum-line minus"><span>給料（売上×30%）</span><span class="v">${yen(salaryAmount())}</span></div>
-    <div class="sum-line minus"><span>経費</span><span class="v">${yen(expenseTotal())}</span></div>
-    <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStartCash())}</span></div>
   `;
 
   renderStaffSummary();
@@ -1013,7 +1089,7 @@ function confirmCloseDay(){
   closeCloseModal();
   state.customers=[]; state.expenses=[]; state.seqCounter=0; expandedId=null;
   state.startCash=0;
-  DENOMS.forEach(d=>state.cash[d]=0); state.cash.coins=0;
+  DENOMS.forEach(d=>state.cash[d]=0); COIN_DENOMS.forEach(d=>state.cash['c'+d]=0);
   state.date=today();
   save();
   document.getElementById('todayLabel').textContent=jpDate();
