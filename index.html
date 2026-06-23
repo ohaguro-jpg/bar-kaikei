@@ -370,14 +370,18 @@
 
 <div id="closeModal" class="startup">
   <div class="startup-card">
-    <h2>🔒 集計終了</h2>
-    <p class="hint" style="text-align:center;">給料などを取ったあとの残金を数えてください</p>
-    <div class="sum-big" style="margin:18px 0 12px;">
+    <h2>🔒 集計終了・残金確認</h2>
+    <p class="hint" style="text-align:center;">給料を取った後の残金を数えてください</p>
+    <div class="sum-big" style="margin:12px 0 10px;">
       <span class="t">次回のスタート金（目安）</span>
       <span class="v" id="cmNextStart">¥0</span>
     </div>
-    <span class="label">今の残金（実際に数えた金額）</span>
-    <input type="number" id="cmCash" inputmode="numeric" placeholder="例：30000" oninput="checkCloseAmount()">
+    <span class="label">残金を数える（紙幣は枚数・小銭は金額）</span>
+    <div id="cmDenomList" style="margin-top:6px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:12px 14px;background:var(--card);border:1px solid var(--accent2);border-radius:12px;">
+      <span style="font-size:14px;">数えた残金</span>
+      <span id="cmCashTotal" style="font-size:22px;font-weight:800;color:var(--accent);">¥0</span>
+    </div>
     <div id="cmCheck" style="min-height:48px; margin-top:8px;"></div>
     <button class="btn primary" onclick="confirmCloseDay()" style="margin-top:4px;">✅ 営業終了・データをリセット</button>
     <button class="btn ghost" onclick="exportImage()" style="margin-top:8px;">📸 客一覧を画像で保存</button>
@@ -1071,27 +1075,64 @@ function exportImage(){
 }
 
 /* ---------- 集計終了フロー ---------- */
-function closeDay(){
-  openCloseModal();
+let closeCash = {};
+function initCloseCash(){
+  DENOMS.forEach(d=>closeCash[d]=0);
+  COIN_DENOMS.forEach(d=>closeCash['c'+d]=0);
 }
+function closeDay(){ openCloseModal(); }
 function openCloseModal(){
+  initCloseCash();
   document.getElementById('cmNextStart').textContent = yen(nextStartCash());
-  document.getElementById('cmCash').value = '';
-  document.getElementById('cmCheck').innerHTML = '';
+  renderCloseModal();
   document.getElementById('closeModal').classList.add('show');
 }
 function closeCloseModal(){ document.getElementById('closeModal').classList.remove('show'); }
-function checkCloseAmount(){
-  const entered = parseInt(document.getElementById('cmCash').value)||0;
-  const val = document.getElementById('cmCash').value;
-  if(!val){ document.getElementById('cmCheck').innerHTML=''; return; }
-  const expected = nextStartCash();
-  const diff = entered - expected;
+function renderCloseModal(){
+  const wrap=document.getElementById('cmDenomList'); wrap.innerHTML='';
+  DENOMS.forEach(d=>{
+    const cnt=closeCash[d]||0;
+    wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
+      <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCloseBill(${d},this.value)">
+      <span class="x">枚</span><span class="sub" id="cm-sub-${d}">${yen(d*cnt)}</span></div>`));
+  });
+  wrap.appendChild(elFrom(`<div style="padding:6px 0 4px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);margin-top:4px;">小銭（金額で入力）</div>`));
+  COIN_DENOMS.forEach(d=>{
+    const amt=closeCash['c'+d]||0;
+    wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
+      <input type="number" inputmode="numeric" min="0" value="${amt}" onchange="setCloseCoin('c${d}',this.value)" style="width:96px;text-align:right;">
+      <span class="x">円</span><span class="sub" id="cm-sub-c${d}">${yen(amt)}</span></div>`));
+  });
+  updateCloseCheck();
+}
+function closeCashTotal(){
+  return DENOMS.reduce((s,d)=>s+d*(closeCash[d]||0),0)
+       + COIN_DENOMS.reduce((s,d)=>s+(closeCash['c'+d]||0),0);
+}
+function setCloseBill(d,v){
+  closeCash[d]=Math.max(0,parseInt(v)||0);
+  const sub=document.getElementById('cm-sub-'+d);
+  if(sub) sub.textContent=yen(d*closeCash[d]);
+  updateCloseCheck();
+}
+function setCloseCoin(key,v){
+  closeCash[key]=Math.max(0,parseInt(v)||0);
+  const sub=document.getElementById('cm-sub-'+key);
+  if(sub) sub.textContent=yen(closeCash[key]);
+  updateCloseCheck();
+}
+function updateCloseCheck(){
+  const counted=closeCashTotal();
+  const expected=nextStartCash();
+  const diff=counted-expected;
+  document.getElementById('cmCashTotal').textContent=yen(counted);
+  const allZero=DENOMS.every(d=>!closeCash[d])&&COIN_DENOMS.every(d=>!closeCash['c'+d]);
   let html;
-  if(diff===0) html='<div class="chk ok">✓ 金額が一致しています！</div>';
-  else if(diff>0) html=`<div class="chk ng">¥${diff.toLocaleString()} 多い（確認してください）</div>`;
-  else html=`<div class="chk ng">¥${(-diff).toLocaleString()} 不足（確認してください）</div>`;
-  document.getElementById('cmCheck').innerHTML = html;
+  if(allZero) html='<div class="hint" style="text-align:center;padding:8px 0;">↑ 残金を数えて入力してください</div>';
+  else if(diff===0) html='<div class="chk ok">✓ 目安と一致しています！</div>';
+  else if(diff>0) html=`<div class="chk ng">${yen(diff)} 多い（確認してください）</div>`;
+  else html=`<div class="chk ng">${yen(-diff)} 不足（確認してください）</div>`;
+  document.getElementById('cmCheck').innerHTML=html;
 }
 function confirmCloseDay(){
   if(!confirm('営業を終了してリセットしますか？\n（客一覧の保存は先に「客一覧を画像で保存」から行えます）')) return;
