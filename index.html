@@ -887,7 +887,7 @@ function tipTotal(){ return state.customers.reduce((s,c)=>s+(c.tip||0),0); }
 function drinkSales(){ return salesTotal()-chargeTotal(); }
 function salaryAmount(){ return Math.round(salesTotal()*SALARY_RATE); }
 function nextStartCash(){ return state.startCash + salesTotal() - salaryAmount() - expenseTotal(); }
-function cashDerivedSales(){ return cashTotal() - state.startCash + expenseTotal(); }
+function cashDerivedSales(){ return cashTotal() - state.startCash + expenseTotal() - tipTotal(); }
 function cashGap(){ return cashDerivedSales() - salesTotal(); }
 function countryBreakdown(){
   const m={};
@@ -898,8 +898,9 @@ function staffBreakdown(){
   const m={};
   state.customers.forEach(c=>{
     const k=c.staff||'';
-    if(!m[k]) m[k]={sales:0, groups:0, people:0};
-    m[k].sales += tabSales(c); m[k].groups++; m[k].people += c.people;
+    if(!m[k]) m[k]={sales:0, groups:0, people:0, tips:0};
+    m[k].sales += tabSales(c); m[k].tips += (c.tip||0);
+    m[k].groups++; m[k].people += c.people;
   });
   return Object.entries(m).sort((a,b)=>b[1].sales-a[1].sales);
 }
@@ -907,11 +908,15 @@ function renderStaffSummary(){
   const wrap=document.getElementById('staffSummary');
   const sb=staffBreakdown();
   if(sb.length===0){ wrap.innerHTML='<div class="empty">データなし</div>'; return; }
-  wrap.innerHTML = sb.map(([k,v])=>`
-    <div class="sum-line">
-      <span>${k?escapeHtml(k):'担当なし'}<br><span style="font-size:12px;color:var(--muted);">${v.groups}組 / ${v.people}名 ・ 給料 ${yen(Math.round(v.sales*SALARY_RATE))}</span></span>
+  wrap.innerHTML = sb.map(([k,v])=>{
+    const salary=Math.round(v.sales*SALARY_RATE);
+    const takehome=salary+(v.tips||0);
+    const tipNote=v.tips>0?` ＋ チップ ${yen(v.tips)} ＝ 手取り ${yen(takehome)}`:'';
+    return `<div class="sum-line">
+      <span>${k?escapeHtml(k):'担当なし'}<br><span style="font-size:12px;color:var(--muted);">${v.groups}組 / ${v.people}名 ・ 給料 ${yen(salary)}${tipNote}</span></span>
       <span class="v">${yen(v.sales)}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function renderSummary(){
   const sales=salesTotal(), tip=tipTotal();
@@ -933,8 +938,9 @@ function renderSummary(){
     <div class="sum-line minus"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
     <div class="sum-line" style="border-top:1px solid var(--accent2);padding-top:10px;"><span>差額</span><span class="v">${yen(rawDiff)}</span></div>
     <div class="sum-line plus"><span>経費（現金から支払い済み）</span><span class="v">${yen(exp)}</span></div>
+    ${tip>0?`<div class="sum-line minus"><span>チップ（担当の取り分）</span><span class="v">${yen(tip)}</span></div>`:''}
     <div class="sum-big"><span class="t">現金から見た売上</span><span class="v">${yen(cashSales)}</span></div>
-    <p class="hint" style="margin-top:6px;">エンド金 − スタート金 ＋ 経費 ＝ 現金売上</p>
+    <p class="hint" style="margin-top:6px;">エンド金 − スタート金 ＋ 経費 − チップ ＝ 現金売上</p>
   `;
 
   /* ② 差額確認 */
@@ -950,11 +956,14 @@ function renderSummary(){
   `;
 
   /* ③ 次回スタート金 */
+  const firstEndWithTip=state.startCash+sales+tip;
   document.getElementById('nextStart').innerHTML=`
     <div class="sum-line"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
     <div class="sum-line plus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
-    <div class="sum-big"><span class="t">一次エンド金</span><span class="v">${yen(firstEnd)}</span></div>
+    ${tip>0?`<div class="sum-line plus"><span>チップ</span><span class="v">${yen(tip)}</span></div>`:''}
+    <div class="sum-big"><span class="t">一次エンド金</span><span class="v">${yen(tip>0?firstEndWithTip:firstEnd)}</span></div>
     <div class="sum-line minus" style="margin-top:8px;"><span>給料（売上×30%）</span><span class="v">${yen(salary)}</span></div>
+    ${tip>0?`<div class="sum-line minus"><span>チップ（担当へ）</span><span class="v">${yen(tip)}</span></div>`:''}
     <div class="sum-line minus"><span>経費</span><span class="v">${yen(exp)}</span></div>
     <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStart)}</span></div>
   `;
