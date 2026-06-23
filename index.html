@@ -196,8 +196,14 @@
 </div>
 
 <header>
-  <h1>🍶 Bar 会計ノート</h1>
-  <div class="date" id="todayLabel"></div>
+  <div>
+    <h1>🍶 Bar 会計ノート</h1>
+    <div class="date" id="todayLabel"></div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:11px;color:var(--muted);">現在の売上</div>
+    <div id="headerSales" style="font-size:20px;font-weight:800;color:var(--accent);">¥0</div>
+  </div>
 </header>
 
 <div class="wrap">
@@ -472,7 +478,11 @@ function load(){
     return st;
   }catch(e){ return defaultState(); }
 }
-function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); renderHeaderSales(); }
+function renderHeaderSales(){
+  const el=document.getElementById('headerSales');
+  if(el) el.textContent=yen(salesTotal());
+}
 
 let state = load();
 let reg = { name:'', tip:0, country:'', people:1, chargeOn:true };
@@ -1159,6 +1169,7 @@ function escapeAttr(s){ return escapeHtml(s).replace(/'/g,'&#39;'); }
 function init(){
   document.getElementById('todayLabel').textContent = jpDate();
   renderStaffBar();
+  renderHeaderSales();
   renderCountryButtons();
   renderRegCharge();
   renderTabs();
