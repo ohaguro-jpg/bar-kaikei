@@ -184,13 +184,17 @@
 <div id="startup" class="startup">
   <div class="startup-card">
     <h2>🍶 営業スタート</h2>
-    <p class="hint" style="text-align:center;">今日の担当とスタート金を入れてください</p>
+    <p class="hint" style="text-align:center;">スタート金を数えて、担当を確認してください</p>
+    <span class="label" style="margin-top:18px;">スタート金を数える（紙幣は枚数・小銭は金額）</span>
+    <div id="suDenomList" style="margin-top:6px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:12px 14px;background:var(--card);border:1px solid var(--accent2);border-radius:12px;">
+      <span style="font-size:14px;">スタート金合計</span>
+      <span id="suCashTotal" style="font-size:24px;font-weight:800;color:var(--accent);">¥0</span>
+    </div>
     <span class="label" style="margin-top:18px;">担当（あなたの名前）</span>
     <input type="text" id="suName" placeholder="例：ゆうじ" autocomplete="off">
     <div class="chips" id="suStaffChips" style="margin-top:10px;"></div>
-    <span class="label" style="margin-top:10px;">スタート金（つり銭）</span>
-    <input type="number" id="suStartCash" inputmode="numeric" placeholder="例：30000">
-    <button class="btn primary" onclick="startBusiness()">この内容で始める</button>
+    <button class="btn primary" onclick="startBusiness()" style="margin-top:16px;">この内容で始める</button>
     <p class="hint" style="text-align:center;">名前を入れると、登録するお客様の売上がその人の担当になります（空でもOK）。</p>
   </div>
 </div>
@@ -577,10 +581,49 @@ function renderRegCharge(){
     `${yen(state.chargeAmount)} × ${reg.people}名 = ${yen(state.chargeAmount*reg.people)}`;
 }
 /* ---------- スタート画面・担当スタッフ ---------- */
+let suCash = {};
+function initSuCash(){ DENOMS.forEach(d=>suCash[d]=0); COIN_DENOMS.forEach(d=>suCash['c'+d]=0); }
+function suCashTotal(){
+  return DENOMS.reduce((s,d)=>s+d*(suCash[d]||0),0)
+       + COIN_DENOMS.reduce((s,d)=>s+(suCash['c'+d]||0),0);
+}
+function renderSuDenomList(){
+  const wrap=document.getElementById('suDenomList'); if(!wrap) return;
+  wrap.innerHTML='';
+  DENOMS.forEach(d=>{
+    const cnt=suCash[d]||0;
+    wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
+      <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setSuBill(${d},this.value)">
+      <span class="x">枚</span><span class="sub" id="su-sub-${d}">${yen(d*cnt)}</span></div>`));
+  });
+  wrap.appendChild(elFrom(`<div style="padding:6px 0 4px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);margin-top:4px;">小銭（金額で入力）</div>`));
+  COIN_DENOMS.forEach(d=>{
+    const amt=suCash['c'+d]||0;
+    wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
+      <input type="number" inputmode="numeric" min="0" value="${amt}" onchange="setSuCoin('c${d}',this.value)" style="width:96px;text-align:right;">
+      <span class="x">円</span><span class="sub" id="su-sub-c${d}">${yen(amt)}</span></div>`));
+  });
+  updateSuTotal();
+}
+function setSuBill(d,v){
+  suCash[d]=Math.max(0,parseInt(v)||0);
+  const s=document.getElementById('su-sub-'+d); if(s) s.textContent=yen(d*suCash[d]);
+  updateSuTotal();
+}
+function setSuCoin(key,v){
+  suCash[key]=Math.max(0,parseInt(v)||0);
+  const s=document.getElementById('su-sub-'+key); if(s) s.textContent=yen(suCash[key]);
+  updateSuTotal();
+}
+function updateSuTotal(){
+  const el=document.getElementById('suCashTotal');
+  if(el) el.textContent=yen(suCashTotal());
+}
 function openStartup(){
+  initSuCash();
   document.getElementById('suName').value = state.currentStaff || '';
-  document.getElementById('suStartCash').value = state.startCash || '';
   renderStartupStaff();
+  renderSuDenomList();
   document.getElementById('startup').classList.add('show');
 }
 function closeStartup(){ document.getElementById('startup').classList.remove('show'); }
@@ -607,7 +650,7 @@ function removeStaffByIdx(i){
 }
 function startBusiness(){
   const name=document.getElementById('suName').value.trim();
-  const sc=Math.max(0,parseInt(document.getElementById('suStartCash').value)||0);
+  const sc=suCashTotal();
   setStaff(name);
   state.startCash=sc; save();
   renderStaffBar();
