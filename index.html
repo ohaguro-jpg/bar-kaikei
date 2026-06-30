@@ -187,9 +187,9 @@
     <p class="hint" style="text-align:center;">スタート金を数えて、担当を確認してください</p>
     <span class="label" style="margin-top:18px;">スタート金を数える（紙幣は枚数・小銭は金額）</span>
     <div id="suDenomList" style="margin-top:6px;"></div>
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:12px 14px;background:var(--card);border:1px solid var(--accent2);border-radius:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:12px 14px;background:var(--card);border:1px solid var(--accent2);border-radius:12px;gap:10px;">
       <span style="font-size:14px;">スタート金合計</span>
-      <span id="suCashTotal" style="font-size:24px;font-weight:800;color:var(--accent);">¥0</span>
+      <input type="number" id="suCashTotal" inputmode="numeric" placeholder="0" onchange="setSuManual(this.value)" style="width:150px;text-align:right;font-size:22px;font-weight:800;color:var(--accent);background:var(--card2);">
     </div>
     <span class="label" style="margin-top:18px;">担当（あなたの名前）</span>
     <input type="text" id="suName" placeholder="例：ゆうじ" autocomplete="off">
@@ -312,36 +312,28 @@
     </div>
   </section>
 
-  <!-- ===== 現金集計 ===== -->
-  <section id="tab-cash">
-    <div class="card">
-      <h2>スタート金（つり銭）</h2>
-      <span class="label">営業を始めた時にあった現金</span>
-      <input type="number" id="startCashInput" inputmode="numeric" onchange="setStartCash(this.value)">
-    </div>
-    <div class="card">
-      <h2>現金の枚数を数える（現在の残金）</h2>
-      <div id="cashList"></div>
-      <div class="total-bar" style="margin-top:12px;">
-        <span class="t">現在の残金（実際にある金額）</span>
-        <span class="v" id="cashTotal">¥0</span>
-      </div>
-      <button class="btn ghost" onclick="resetCash()">枚数をすべて0に戻す</button>
-    </div>
-  </section>
-
   <!-- ===== 集計 ===== -->
   <section id="tab-summary">
     <div class="card">
-      <h2>① 現金の確認</h2>
-      <div id="cashCheck"></div>
+      <h2>① エンド金を数える</h2>
+      <p class="hint">今レジにある現金を数えてください（紙幣は枚数・小銭は金額）。下の合計に直接入力してもOKです。</p>
+      <div id="endCashList" style="margin-top:8px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 14px;background:var(--card2);border:1px solid var(--accent2);border-radius:12px;gap:10px;">
+        <span style="font-size:14px;">エンド金 合計</span>
+        <input type="number" id="endCashTotal" inputmode="numeric" placeholder="0" onchange="setEndCashManual(this.value)" style="width:140px;text-align:right;font-size:20px;font-weight:800;color:var(--accent);background:var(--card);">
+      </div>
+      <button class="btn ghost" onclick="resetEndCash()">エンド金を全部消す</button>
     </div>
     <div class="card">
-      <h2>② 差額確認（おつりチェック）</h2>
-      <div id="gapCheck"></div>
+      <h2>② 仮売上金</h2>
+      <div id="tentativeCalc"></div>
     </div>
     <div class="card">
-      <h2>③ 次回スタート金の計算</h2>
+      <h2>③ 売上の確定（低い方を採用）</h2>
+      <div id="adoptCalc"></div>
+    </div>
+    <div class="card">
+      <h2>④ 次回スタート金</h2>
       <div id="nextStart"></div>
     </div>
     <div class="card">
@@ -359,10 +351,10 @@
       <button class="btn ghost" onclick="copyDetail()">📋 客一覧をコピー</button>
     </div>
     <div class="card">
-      <h2>1日の締め</h2>
+      <h2>⑤ 集計終了・残金チェック</h2>
       <button class="btn ghost" onclick="copySummary()">📋 集計をコピー</button>
-      <button class="btn danger" onclick="closeDay()">🔒 集計終了・営業終了</button>
-      <p class="hint">「集計終了」を押すと残金の確認画面が開きます。金額が合ったら営業終了・リセットできます。</p>
+      <button class="btn danger" onclick="closeDay()">🔒 残金を数えて終了</button>
+      <p class="hint">給料とチップを取り出してから、残りの現金を数えて「次回スタート金」と合うか確認します。合えば営業終了・リセットします。</p>
     </div>
     <div class="card">
       <h2>📅 過去7日の記録</h2>
@@ -382,9 +374,9 @@
     </div>
     <span class="label">残金を数える（紙幣は枚数・小銭は金額）</span>
     <div id="cmDenomList" style="margin-top:6px;"></div>
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:12px 14px;background:var(--card);border:1px solid var(--accent2);border-radius:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:12px 14px;background:var(--card);border:1px solid var(--accent2);border-radius:12px;gap:10px;">
       <span style="font-size:14px;">数えた残金</span>
-      <span id="cmCashTotal" style="font-size:22px;font-weight:800;color:var(--accent);">¥0</span>
+      <input type="number" id="cmCashTotal" inputmode="numeric" placeholder="0" onchange="setCloseManual(this.value)" style="width:140px;text-align:right;font-size:20px;font-weight:800;color:var(--accent);background:var(--card2);">
     </div>
     <div id="cmCheck" style="min-height:48px; margin-top:8px;"></div>
     <button class="btn primary" onclick="confirmCloseDay()" style="margin-top:4px;">✅ 営業終了・データをリセット</button>
@@ -398,7 +390,6 @@
   <button data-tab="kaikei" onclick="switchTab('kaikei',this)"><span class="ic">🧾</span>会計</button>
   <button data-tab="drinks" onclick="switchTab('drinks',this)"><span class="ic">🍶</span>ドリンク</button>
   <button data-tab="expense" onclick="switchTab('expense',this)"><span class="ic">📤</span>経費</button>
-  <button data-tab="cash" onclick="switchTab('cash',this)"><span class="ic">💴</span>現金</button>
   <button data-tab="summary" onclick="switchTab('summary',this)"><span class="ic">📊</span>集計</button>
 </nav>
 
@@ -454,6 +445,7 @@ function defaultState(){
     customers: [],
     expenses: [],
     cash,
+    cashManual: null,
   };
 }
 function load(){
@@ -463,6 +455,7 @@ function load(){
     const def = defaultState();
     const st = Object.assign(def, s, {cash: Object.assign(def.cash, s.cash||{})});
     COIN_DENOMS.forEach(d=>{ if(st.cash['c'+d]===undefined) st.cash['c'+d]=0; });
+    if(st.cashManual===undefined) st.cashManual=null;
     if(!Array.isArray(st.countries)) st.countries=[];
     if(!Array.isArray(st.mixers) || st.mixers.length===0) st.mixers = DEFAULT_MIXERS.map(m=>({...m}));
     if(Array.isArray(st.drinks) && !st.drinks.some(d=>d.name==='ラム')) st.drinks.push({id:'d_rum', name:'ラム', price:800});
@@ -504,7 +497,6 @@ function switchTab(name, btn){
   btn.classList.add('active');
   if(name==='kaikei') renderTabs();
   if(name==='summary') renderSummary();
-  if(name==='cash') renderCash();
   if(name==='expense') renderExpenses();
   if(name==='drinks'){ renderDrinkMaster(); renderMixerMaster(); }
   window.scrollTo(0,0);
@@ -582,42 +574,48 @@ function renderRegCharge(){
 }
 /* ---------- スタート画面・担当スタッフ ---------- */
 let suCash = {};
-function initSuCash(){ DENOMS.forEach(d=>suCash[d]=0); COIN_DENOMS.forEach(d=>suCash['c'+d]=0); }
-function suCashTotal(){
+let suManual = null;
+function initSuCash(){ DENOMS.forEach(d=>suCash[d]=0); COIN_DENOMS.forEach(d=>suCash['c'+d]=0); suManual=null; }
+function suDenomSum(){
   return DENOMS.reduce((s,d)=>s+d*(suCash[d]||0),0)
        + COIN_DENOMS.reduce((s,d)=>s+(suCash['c'+d]||0),0);
 }
+function suCashTotal(){ return suManual!=null ? suManual : suDenomSum(); }
 function renderSuDenomList(){
   const wrap=document.getElementById('suDenomList'); if(!wrap) return;
   wrap.innerHTML='';
   DENOMS.forEach(d=>{
     const cnt=suCash[d]||0;
     wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
-      <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setSuBill(${d},this.value)">
+      <input type="number" inputmode="numeric" min="0" value="${cnt||''}" placeholder="0" onchange="setSuBill(${d},this.value)">
       <span class="x">枚</span><span class="sub" id="su-sub-${d}">${yen(d*cnt)}</span></div>`));
   });
   wrap.appendChild(elFrom(`<div style="padding:6px 0 4px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);margin-top:4px;">小銭（金額で入力）</div>`));
   COIN_DENOMS.forEach(d=>{
     const amt=suCash['c'+d]||0;
     wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
-      <input type="number" inputmode="numeric" min="0" value="${amt}" onchange="setSuCoin('c${d}',this.value)" style="width:96px;text-align:right;">
+      <input type="number" inputmode="numeric" min="0" value="${amt||''}" placeholder="0" onchange="setSuCoin('c${d}',this.value)" style="width:96px;text-align:right;">
       <span class="x">円</span><span class="sub" id="su-sub-c${d}">${yen(amt)}</span></div>`));
   });
   updateSuTotal();
 }
 function setSuBill(d,v){
-  suCash[d]=Math.max(0,parseInt(v)||0);
+  suCash[d]=Math.max(0,parseInt(v)||0); suManual=null;
   const s=document.getElementById('su-sub-'+d); if(s) s.textContent=yen(d*suCash[d]);
   updateSuTotal();
 }
 function setSuCoin(key,v){
-  suCash[key]=Math.max(0,parseInt(v)||0);
+  suCash[key]=Math.max(0,parseInt(v)||0); suManual=null;
   const s=document.getElementById('su-sub-'+key); if(s) s.textContent=yen(suCash[key]);
   updateSuTotal();
 }
+function setSuManual(v){
+  const s=String(v).trim();
+  suManual = s==='' ? null : Math.max(0,parseInt(v)||0);
+}
 function updateSuTotal(){
   const el=document.getElementById('suCashTotal');
-  if(el) el.textContent=yen(suCashTotal());
+  if(el) el.value = suDenomSum()||'';
 }
 function openStartup(){
   initSuCash();
@@ -870,37 +868,56 @@ function addMixer(){
 }
 function setChargeAmt(v){ state.chargeAmount=Math.max(0,parseInt(v)||0); save(); renderRegCharge(); }
 
-/* ---------- 現金・スタート金 ---------- */
+/* ---------- エンド金（集計①） ---------- */
 function setStartCash(v){ state.startCash=Math.max(0,parseInt(v)||0); save(); }
-function renderCash(){
-  document.getElementById('startCashInput').value = state.startCash;
-  const wrap=document.getElementById('cashList'); wrap.innerHTML='';
+function cashDenomSum(){
+  return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0)
+       + COIN_DENOMS.reduce((s,d)=>s+(state.cash['c'+d]||0),0);
+}
+function cashTotal(){ return (state.cashManual!=null) ? state.cashManual : cashDenomSum(); }
+function renderEndCash(){
+  const wrap=document.getElementById('endCashList'); if(!wrap) return;
+  wrap.innerHTML='';
   DENOMS.forEach(d=>{
     const cnt=state.cash[d]||0;
     wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
-      <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCash(${d},this.value)">
-      <span class="x">枚</span><span class="sub">${yen(d*cnt)}</span></div>`));
+      <input type="number" inputmode="numeric" min="0" value="${cnt||''}" placeholder="0" onchange="setEndBill(${d},this.value)">
+      <span class="x">枚</span><span class="sub" id="end-sub-${d}">${yen(d*cnt)}</span></div>`));
   });
   wrap.appendChild(elFrom(`<div style="padding:8px 0 4px; font-size:12px; color:var(--muted); border-top:1px dashed var(--line); margin-top:4px;">小銭（金額で入力）</div>`));
   COIN_DENOMS.forEach(d=>{
     const amt=state.cash['c'+d]||0;
     wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
-      <input type="number" inputmode="numeric" min="0" value="${amt}" onchange="setCoinAmt('c${d}',this.value)" style="width:96px;text-align:right;">
-      <span class="x">円</span><span class="sub">${yen(amt)}</span></div>`));
+      <input type="number" inputmode="numeric" min="0" value="${amt||''}" placeholder="0" onchange="setEndCoin('c${d}',this.value)" style="width:96px;text-align:right;">
+      <span class="x">円</span><span class="sub" id="end-sub-c${d}">${yen(amt)}</span></div>`));
   });
-  document.getElementById('cashTotal').textContent = yen(cashTotal());
+  updateEndCashTotal();
 }
-function cashTotal(){
-  return DENOMS.reduce((s,d)=>s+d*(state.cash[d]||0),0)
-       + COIN_DENOMS.reduce((s,d)=>s+(state.cash['c'+d]||0),0);
+function updateEndCashTotal(){
+  const el=document.getElementById('endCashTotal');
+  if(el) el.value = (state.cashManual!=null ? state.cashManual : cashDenomSum())||'';
 }
-function setCash(d,v){ state.cash[d]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
-function setCoinAmt(key,v){ state.cash[key]=Math.max(0,parseInt(v)||0); save(); renderCash(); }
-function resetCash(){
-  if(!confirm('金額をすべて0に戻しますか？'))return;
+function setEndBill(d,v){
+  state.cash[d]=Math.max(0,parseInt(v)||0); state.cashManual=null;
+  const s=document.getElementById('end-sub-'+d); if(s) s.textContent=yen(d*state.cash[d]);
+  updateEndCashTotal(); save(); renderSummaryCalc();
+}
+function setEndCoin(key,v){
+  state.cash[key]=Math.max(0,parseInt(v)||0); state.cashManual=null;
+  const s=document.getElementById('end-sub-'+key); if(s) s.textContent=yen(state.cash[key]);
+  updateEndCashTotal(); save(); renderSummaryCalc();
+}
+function setEndCashManual(v){
+  const s=String(v).trim();
+  state.cashManual = s==='' ? null : Math.max(0,parseInt(v)||0);
+  save(); renderSummaryCalc();
+}
+function resetEndCash(){
+  if(!confirm('エンド金をすべて消しますか？'))return;
   DENOMS.forEach(d=>state.cash[d]=0);
   COIN_DENOMS.forEach(d=>state.cash['c'+d]=0);
-  save(); renderCash();
+  state.cashManual=null;
+  save(); renderEndCash(); renderSummaryCalc();
 }
 
 /* ---------- 経費 ---------- */
@@ -928,10 +945,15 @@ function salesTotal(){ return state.customers.reduce((s,c)=>s+tabSales(c),0); }
 function chargeTotal(){ return state.customers.reduce((s,c)=>s+tabCharge(c),0); }
 function tipTotal(){ return state.customers.reduce((s,c)=>s+(c.tip||0),0); }
 function drinkSales(){ return salesTotal()-chargeTotal(); }
-function salaryAmount(){ return Math.round(salesTotal()*SALARY_RATE); }
-function nextStartCash(){ return state.startCash + salesTotal() - salaryAmount() - expenseTotal(); }
-function cashDerivedSales(){ return cashTotal() - state.startCash + expenseTotal() - tipTotal(); }
-function cashGap(){ return cashDerivedSales() - salesTotal(); }
+/* 仮売上金 = エンド金 − スタート金 + 経費 − チップ（チップは売上に入れない） */
+function tentativeSales(){ return cashTotal() - state.startCash + expenseTotal() - tipTotal(); }
+/* 本売上金 = 伝票（チャージ＋ドリンク、チップ除く） */
+function ledgerSales(){ return salesTotal(); }
+/* 採用売上 = 仮・本の低い方 */
+function adoptedSales(){ return Math.min(tentativeSales(), ledgerSales()); }
+function salesGap(){ return tentativeSales() - ledgerSales(); }
+function salaryAmount(){ return Math.round(adoptedSales()*SALARY_RATE); }
+function nextStartCash(){ return state.startCash + adoptedSales() - salaryAmount() - expenseTotal(); }
 function countryBreakdown(){
   const m={};
   state.customers.forEach(c=>{ m[c.country]=(m[c.country]||0)+c.people; });
@@ -961,55 +983,61 @@ function renderStaffSummary(){
     </div>`;
   }).join('');
 }
+/* 集計の計算部分（②③④）＝ エンド金を入れ替えるたびに更新 */
+function renderSummaryCalc(){
+  const ledger=ledgerSales();
+  const tentative=tentativeSales();
+  const adopted=adoptedSales();
+  const gap=salesGap();
+  const exp=expenseTotal();
+  const salary=salaryAmount();
+  const nextStart=nextStartCash();
+  const tip=tipTotal();
+
+  /* ② 仮売上金 */
+  document.getElementById('tentativeCalc').innerHTML=`
+    <div class="sum-line"><span>エンド金（数えた現金）</span><span class="v">${yen(cashTotal())}</span></div>
+    <div class="sum-line minus"><span>スタート金（朝に数えた）</span><span class="v">${yen(state.startCash)}</span></div>
+    <div class="sum-line plus"><span>経費（現金から支払い済み）</span><span class="v">${yen(exp)}</span></div>
+    ${tip>0?`<div class="sum-line minus"><span>チップ（売上に入れない）</span><span class="v">${yen(tip)}</span></div>`:''}
+    <div class="sum-big"><span class="t">仮売上金</span><span class="v">${yen(tentative)}</span></div>
+    <p class="hint" style="margin-top:6px;">エンド金 − スタート金 ＋ 経費${tip>0?' − チップ':''} ＝ 仮売上金</p>
+  `;
+
+  /* ③ 売上の確定（低い方を採用） */
+  const cashLower = tentative<=ledger;
+  let chk;
+  if(gap===0) chk=`<div class="chk ok">✓ 仮売上金と伝票が一致しています（差額 ¥0）</div>`;
+  else if(gap>0) chk=`<div class="chk ng">現金が ${yen(gap)} 多い（おつりを少なめに渡した可能性）</div>`;
+  else chk=`<div class="chk ng">現金が ${yen(-gap)} 不足（おつりを多めに渡した可能性）</div>`;
+  document.getElementById('adoptCalc').innerHTML=`
+    <div class="sum-line"><span>仮売上金（現金から）${cashLower?' ◀採用':''}</span><span class="v"${cashLower?' style="color:var(--accent);"':''}>${yen(tentative)}</span></div>
+    <div class="sum-line"><span>本売上金（伝票）${!cashLower?' ◀採用':''}</span><span class="v"${!cashLower?' style="color:var(--accent);"':''}>${yen(ledger)}</span></div>
+    ${chk}
+    <div class="sum-big green"><span class="t">採用する売上（低い方）</span><span class="v">${yen(adopted)}</span></div>
+    <p class="hint" style="margin-top:6px;">差額が ¥0 なら完璧です。低い方を「今日の売上」として給料・次スタート金を計算します。</p>
+  `;
+
+  /* ④ 次回スタート金 */
+  const firstEnd=state.startCash+adopted;
+  document.getElementById('nextStart').innerHTML=`
+    <div class="sum-line"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
+    <div class="sum-line plus"><span>採用する売上</span><span class="v">${yen(adopted)}</span></div>
+    <div class="sum-big"><span class="t">一次エンド金</span><span class="v">${yen(firstEnd)}</span></div>
+    <div class="sum-line minus" style="margin-top:8px;"><span>給料（売上×30%）</span><span class="v">${yen(salary)}</span></div>
+    <div class="sum-line minus"><span>経費</span><span class="v">${yen(exp)}</span></div>
+    <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStart)}</span></div>
+    ${tip>0?`<p class="hint" style="margin-top:6px;">※ チップ ${yen(tip)} は担当の取り分です。給料と一緒にレジから取り出してください（次スタート金には含みません）。</p>`:''}
+  `;
+}
 function renderSummary(){
   const sales=salesTotal(), tip=tipTotal();
   const opens=state.customers.filter(c=>c.status==='open');
   const groups=state.customers.length;
   const people=state.customers.reduce((s,c)=>s+c.people,0);
-  const ctotal=cashTotal();
-  const rawDiff=ctotal-state.startCash;
-  const cashSales=cashDerivedSales();
-  const gap=cashGap();
-  const firstEnd=state.startCash+sales;
-  const salary=salaryAmount();
-  const exp=expenseTotal();
-  const nextStart=nextStartCash();
 
-  /* ① 現金の確認 */
-  document.getElementById('cashCheck').innerHTML=`
-    <div class="sum-line"><span>今のエンド金（残金）</span><span class="v">${yen(ctotal)}</span></div>
-    <div class="sum-line minus"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
-    <div class="sum-line" style="border-top:1px solid var(--accent2);padding-top:10px;"><span>差額</span><span class="v">${yen(rawDiff)}</span></div>
-    <div class="sum-line plus"><span>経費（現金から支払い済み）</span><span class="v">${yen(exp)}</span></div>
-    ${tip>0?`<div class="sum-line minus"><span>チップ（担当の取り分）</span><span class="v">${yen(tip)}</span></div>`:''}
-    <div class="sum-big"><span class="t">現金から見た売上</span><span class="v">${yen(cashSales)}</span></div>
-    <p class="hint" style="margin-top:6px;">エンド金 − スタート金 ＋ 経費 − チップ ＝ 現金売上</p>
-  `;
-
-  /* ② 差額確認 */
-  let chk;
-  if(gap===0) chk=`<div class="chk ok">✓ 現金と伝票が一致しています（差額 ¥0）</div>`;
-  else if(gap>0) chk=`<div class="chk ng">現金が ${yen(gap)} 多い（おつりを少なめに渡した可能性）</div>`;
-  else chk=`<div class="chk ng">現金が ${yen(-gap)} 不足（おつりを多めに渡した可能性）</div>`;
-  document.getElementById('gapCheck').innerHTML=`
-    <div class="sum-line"><span>現金から見た売上</span><span class="v">${yen(cashSales)}</span></div>
-    <div class="sum-line minus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
-    ${chk}
-    <p class="hint" style="margin-top:6px;">差額が ¥0 なら完璧です。差額があるときはおつりの渡し間違いなどを確認してください。</p>
-  `;
-
-  /* ③ 次回スタート金 */
-  const firstEndWithTip=state.startCash+sales+tip;
-  document.getElementById('nextStart').innerHTML=`
-    <div class="sum-line"><span>スタート金</span><span class="v">${yen(state.startCash)}</span></div>
-    <div class="sum-line plus"><span>伝票の売上</span><span class="v">${yen(sales)}</span></div>
-    ${tip>0?`<div class="sum-line plus"><span>チップ</span><span class="v">${yen(tip)}</span></div>`:''}
-    <div class="sum-big"><span class="t">一次エンド金</span><span class="v">${yen(tip>0?firstEndWithTip:firstEnd)}</span></div>
-    <div class="sum-line minus" style="margin-top:8px;"><span>給料（売上×30%）</span><span class="v">${yen(salary)}</span></div>
-    ${tip>0?`<div class="sum-line minus"><span>チップ（担当へ）</span><span class="v">${yen(tip)}</span></div>`:''}
-    <div class="sum-line minus"><span>経費</span><span class="v">${yen(exp)}</span></div>
-    <div class="sum-big green"><span class="t">次回のスタート金</span><span class="v">${yen(nextStart)}</span></div>
-  `;
+  renderEndCash();
+  renderSummaryCalc();
 
   /* 来客まとめ */
   const cb=countryBreakdown();
@@ -1059,11 +1087,13 @@ function summaryText(){
     `スタッフ別売上:\n${sb||'  —'}`,
     ``,
     `スタート金: ${yen(state.startCash)}`,
-    `現在の残金: ${yen(cashTotal())}`,
-    `現金から見た売上: ${yen(cashDerivedSales())}`,
-    `ズレ(現金-伝票): ${yen(cashGap())}`,
+    `エンド金(残金): ${yen(cashTotal())}`,
+    `仮売上金(現金から): ${yen(tentativeSales())}`,
+    `本売上金(伝票): ${yen(ledgerSales())}`,
+    `差額(仮-本): ${yen(salesGap())}`,
+    `採用する売上(低い方): ${yen(adoptedSales())}`,
     ``,
-    `給料(売上×30%): ${yen(salaryAmount())}`,
+    `給料(採用売上×30%): ${yen(salaryAmount())}`,
     `次回のスタート金: ${yen(nextStartCash())}`,
     ``,
     `国別:\n${cb||'  —'}`,
@@ -1126,11 +1156,13 @@ function exportImage(){
   }, 'image/png');
 }
 
-/* ---------- 集計終了フロー ---------- */
+/* ---------- 集計終了フロー（⑤ 残金チェック） ---------- */
 let closeCash = {};
+let closeManual = null;
 function initCloseCash(){
   DENOMS.forEach(d=>closeCash[d]=0);
   COIN_DENOMS.forEach(d=>closeCash['c'+d]=0);
+  closeManual=null;
 }
 function closeDay(){ openCloseModal(); }
 function openCloseModal(){
@@ -1145,43 +1177,50 @@ function renderCloseModal(){
   DENOMS.forEach(d=>{
     const cnt=closeCash[d]||0;
     wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
-      <input type="number" inputmode="numeric" min="0" value="${cnt}" onchange="setCloseBill(${d},this.value)">
+      <input type="number" inputmode="numeric" min="0" value="${cnt||''}" placeholder="0" onchange="setCloseBill(${d},this.value)">
       <span class="x">枚</span><span class="sub" id="cm-sub-${d}">${yen(d*cnt)}</span></div>`));
   });
   wrap.appendChild(elFrom(`<div style="padding:6px 0 4px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);margin-top:4px;">小銭（金額で入力）</div>`));
   COIN_DENOMS.forEach(d=>{
     const amt=closeCash['c'+d]||0;
     wrap.appendChild(elFrom(`<div class="denom-row"><span class="d">${yen(d)}</span>
-      <input type="number" inputmode="numeric" min="0" value="${amt}" onchange="setCloseCoin('c${d}',this.value)" style="width:96px;text-align:right;">
+      <input type="number" inputmode="numeric" min="0" value="${amt||''}" placeholder="0" onchange="setCloseCoin('c${d}',this.value)" style="width:96px;text-align:right;">
       <span class="x">円</span><span class="sub" id="cm-sub-c${d}">${yen(amt)}</span></div>`));
   });
   updateCloseCheck();
 }
-function closeCashTotal(){
+function closeDenomSum(){
   return DENOMS.reduce((s,d)=>s+d*(closeCash[d]||0),0)
        + COIN_DENOMS.reduce((s,d)=>s+(closeCash['c'+d]||0),0);
 }
+function closeCashTotal(){ return closeManual!=null ? closeManual : closeDenomSum(); }
 function setCloseBill(d,v){
-  closeCash[d]=Math.max(0,parseInt(v)||0);
+  closeCash[d]=Math.max(0,parseInt(v)||0); closeManual=null;
   const sub=document.getElementById('cm-sub-'+d);
   if(sub) sub.textContent=yen(d*closeCash[d]);
   updateCloseCheck();
 }
 function setCloseCoin(key,v){
-  closeCash[key]=Math.max(0,parseInt(v)||0);
+  closeCash[key]=Math.max(0,parseInt(v)||0); closeManual=null;
   const sub=document.getElementById('cm-sub-'+key);
   if(sub) sub.textContent=yen(closeCash[key]);
+  updateCloseCheck();
+}
+function setCloseManual(v){
+  const s=String(v).trim();
+  closeManual = s==='' ? null : Math.max(0,parseInt(v)||0);
   updateCloseCheck();
 }
 function updateCloseCheck(){
   const counted=closeCashTotal();
   const expected=nextStartCash();
   const diff=counted-expected;
-  document.getElementById('cmCashTotal').textContent=yen(counted);
-  const allZero=DENOMS.every(d=>!closeCash[d])&&COIN_DENOMS.every(d=>!closeCash['c'+d]);
+  const el=document.getElementById('cmCashTotal');
+  if(el && closeManual==null) el.value = closeDenomSum()||'';
+  const empty = (closeManual==null) && DENOMS.every(d=>!closeCash[d]) && COIN_DENOMS.every(d=>!closeCash['c'+d]);
   let html;
-  if(allZero) html='<div class="hint" style="text-align:center;padding:8px 0;">↑ 残金を数えて入力してください</div>';
-  else if(diff===0) html='<div class="chk ok">✓ 目安と一致しています！</div>';
+  if(empty) html='<div class="hint" style="text-align:center;padding:8px 0;">↑ 残金を数えて入力してください</div>';
+  else if(diff===0) html='<div class="chk ok">✓ 次回スタート金と一致しています！</div>';
   else if(diff>0) html=`<div class="chk ng">${yen(diff)} 多い（確認してください）</div>`;
   else html=`<div class="chk ng">${yen(-diff)} 不足（確認してください）</div>`;
   document.getElementById('cmCheck').innerHTML=html;
@@ -1193,10 +1232,11 @@ function confirmCloseDay(){
   state.customers=[]; state.expenses=[]; state.seqCounter=0; expandedId=null;
   state.startCash=0;
   DENOMS.forEach(d=>state.cash[d]=0); COIN_DENOMS.forEach(d=>state.cash['c'+d]=0);
+  state.cashManual=null;
   state.date=today();
   save();
   document.getElementById('todayLabel').textContent=jpDate();
-  resetReg(); renderStaffBar(); renderTabs(); renderSummary(); renderCash(); renderExpenses();
+  resetReg(); renderStaffBar(); renderTabs(); renderSummary(); renderExpenses();
   openStartup();
 }
 
